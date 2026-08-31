@@ -20,8 +20,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("FeSim – Fire Emblem Simulator")
-        self.resize(1100, 600)
+        self.setWindowTitle("Simulateur d'évolution statistique Fire Emblem")
+        self.setWindowState(Qt.WindowState.WindowMaximized)
 
         self._columns = [
             "ID",

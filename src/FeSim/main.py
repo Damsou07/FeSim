@@ -8,6 +8,7 @@ from FeSim.database.repositories.character_repository import CharacterRepository
 from FeSim.database.repositories.game_class_repository import GameClassRepository
 from FeSim.services.character_service import CharacterService
 from FeSim.ui.main_window import MainWindow
+from FeSim.ui.style import DARK_THEME
 
 
 def main():
@@ -36,6 +37,7 @@ def main():
     # ------------------------------------------------------------------
 
     app = QApplication(sys.argv)
+    app.setStyleSheet(DARK_THEME)
 
     window = MainWindow()
 

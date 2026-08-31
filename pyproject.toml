@@ -1,0 +1,8 @@
+[project]
+name = "emblemsim"
+version = "0.1.0"
+description = "Fire Emblem character growth simulator"
+requires-python = ">=3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

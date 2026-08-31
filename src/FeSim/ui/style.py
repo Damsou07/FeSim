@@ -347,4 +347,66 @@ QToolTip {
     border-radius: 4px;
     padding: 4px 8px;
 }
+
+/* ── Navigation bar ─────────────────────────────────────────────────── */
+QWidget#navBar {
+    background-color: #0e0f15;
+    border-bottom: 1px solid #2a2c38;
+}
+
+QPushButton#navBtn {
+    background-color: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 #1e2030, stop:1 #161820
+    );
+    color: #7a8ab0;
+    border: 1px solid #2a3a5a;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+QPushButton#navBtn:hover {
+    background-color: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 #263050, stop:1 #1e2844
+    );
+    border-color: #5a8dee;
+    color: #b0c4f0;
+}
+
+QPushButton#navBtn:pressed {
+    background-color: #12141e;
+}
+
+/* ── List widget (game list) ────────────────────────────────────────── */
+QListWidget {
+    background-color: #16171f;
+    color: #d0d0da;
+    border: 1px solid #2a2c38;
+    border-radius: 6px;
+    outline: none;
+    padding: 4px;
+}
+
+QListWidget::item {
+    padding: 8px 10px;
+    border-radius: 4px;
+    border: none;
+}
+
+QListWidget::item:selected {
+    background-color: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #1a3a6a,
+        stop:0.5 #2e5a96,
+        stop:1 #1a3a6a
+    );
+    color: #ffffff;
+}
+
+QListWidget::item:hover:!selected {
+    background-color: #1e2030;
+}
 """

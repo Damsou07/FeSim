@@ -1,10 +1,12 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent, Signal
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QMainWindow,
     QPushButton,
     QSplitter,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -17,7 +19,10 @@ from FeSim.ui.glow_delegate import GlowingRowDelegate
 
 
 class MainWindow(QMainWindow):
-    """Main window containing the spreadsheet and the character form."""
+    """Main window with character view and game-class navigation."""
+
+    navigate_to_classes = Signal()
+    navigate_back = Signal()
 
     def __init__(self):
         super().__init__()
@@ -54,11 +59,50 @@ class MainWindow(QMainWindow):
     def _build_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
-        root_layout = QHBoxLayout(central)
-        root_layout.setContentsMargins(0, 0, 0, 0)
+        root = QVBoxLayout(central)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # ── Top nav bar ─────────────────────────────────────────────
+        nav = QWidget()
+        nav.setObjectName("navBar")
+        nav.setFixedHeight(40)
+        nav_layout = QHBoxLayout(nav)
+        nav_layout.setContentsMargins(10, 0, 10, 0)
+
+        self.classes_btn = QPushButton(">Liste des classes")
+        self.classes_btn.setObjectName("navBtn")
+        self.classes_btn.setFixedWidth(160)
+        self.classes_btn.clicked.connect(self.navigate_to_classes.emit)
+        nav_layout.addWidget(self.classes_btn)
+
+        nav_layout.addStretch()
+
+        self.back_btn = QPushButton("< Retour")
+        self.back_btn.setObjectName("navBtn")
+        self.back_btn.setFixedWidth(120)
+        self.back_btn.setVisible(False)
+        self.back_btn.clicked.connect(self.navigate_back.emit)
+        nav_layout.addWidget(self.back_btn)
+
+        root.addWidget(nav)
+
+        # ── Stacked pages ───────────────────────────────────────────
+        self.stack = QStackedWidget()
+        root.addWidget(self.stack, 1)
+
+        # Page 0: character spreadsheet
+        self.stack.addWidget(self._build_character_page())
+
+        # placeholder page index stored externally (game class view)
+
+    def _build_character_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        root_layout.addWidget(splitter)
+        layout.addWidget(splitter)
 
         # --- Left panel: character form (hidden by default) ---
         self.form_panel = CharacterForm()
@@ -99,6 +143,7 @@ class MainWindow(QMainWindow):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
         self.table.setItemDelegate(GlowingRowDelegate(self.table))
+        self.table.viewport().installEventFilter(self)
 
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -114,6 +159,19 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
+
+        return page
+
+    # ------------------------------------------------------------------ navigation
+    def show_character_view(self):
+        self.stack.setCurrentIndex(0)
+        self.classes_btn.setVisible(True)
+        self.back_btn.setVisible(False)
+
+    def show_classes_view(self):
+        self.stack.setCurrentIndex(1)
+        self.classes_btn.setVisible(False)
+        self.back_btn.setVisible(True)
 
     # ------------------------------------------------------------------ public api
     def load_characters(self, rows: list[dict]):
@@ -185,3 +243,11 @@ class MainWindow(QMainWindow):
         has = len(self.table.selectionModel().selectedRows()) > 0
         self.edit_btn.setEnabled(has)
         self.delete_btn.setEnabled(has)
+
+    def eventFilter(self, obj, event):
+        if obj is self.table.viewport() and event.type() == QEvent.Type.MouseButtonPress:
+            if isinstance(event, QMouseEvent):
+                index = self.table.indexAt(event.position().toPoint())
+                if not index.isValid():
+                    self.table.clearSelection()
+        return super().eventFilter(obj, event)

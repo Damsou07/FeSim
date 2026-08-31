@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from FeSim.ui.character_form import CharacterForm
 from FeSim.ui.confirm_dialog import confirm_delete
+from FeSim.ui.glow_delegate import GlowingRowDelegate
 
 
 class MainWindow(QMainWindow):
@@ -72,6 +73,7 @@ class MainWindow(QMainWindow):
         # Top buttons
         btn_row = QHBoxLayout()
         self.add_btn = QPushButton("+ Ajouter")
+        self.add_btn.setObjectName("addBtn")
         self.add_btn.setFixedWidth(120)
         btn_row.addWidget(self.add_btn)
 
@@ -81,6 +83,7 @@ class MainWindow(QMainWindow):
         btn_row.addWidget(self.edit_btn)
 
         self.delete_btn = QPushButton("Supprimer")
+        self.delete_btn.setObjectName("deleteBtn")
         self.delete_btn.setFixedWidth(120)
         self.delete_btn.setEnabled(False)
         btn_row.addWidget(self.delete_btn)
@@ -95,6 +98,7 @@ class MainWindow(QMainWindow):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.setItemDelegate(GlowingRowDelegate(self.table))
 
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)

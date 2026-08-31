@@ -33,7 +33,7 @@ class CharacterForm(QWidget):
         root.setContentsMargins(8, 8, 8, 8)
 
         title = QLabel("Nouveau personnage")
-        title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        title.setObjectName("titleLabel")
         root.addWidget(title)
 
         scroll = QScrollArea()
@@ -80,10 +80,12 @@ class CharacterForm(QWidget):
         # --- Buttons ---
         btn_row = QHBoxLayout()
         self.save_btn = QPushButton("Enregistrer")
+        self.save_btn.setObjectName("saveBtn")
         self.save_btn.clicked.connect(self._on_save)
         btn_row.addWidget(self.save_btn)
 
         self.cancel_btn = QPushButton("Annuler")
+        self.cancel_btn.setObjectName("cancelBtn")
         self.cancel_btn.clicked.connect(self.cancelled.emit)
         btn_row.addWidget(self.cancel_btn)
         root.addLayout(btn_row)

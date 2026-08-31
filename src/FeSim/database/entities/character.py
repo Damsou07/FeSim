@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..connection import Base
+
+if TYPE_CHECKING:
+    from FeSim.database.entities.game_class import GameClass
 
 
 class Character(Base):
@@ -39,6 +46,6 @@ class Character(Base):
     defense_growth: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     res_growth: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    game_class: Mapped["GameClass"] = relationship(
+    game_class: Mapped[GameClass] = relationship(
         back_populates="characters"
     )

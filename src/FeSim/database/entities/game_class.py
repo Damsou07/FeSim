@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..connection import Base
+
+if TYPE_CHECKING:
+    from FeSim.database.entities.character import Character
 
 
 class GameClass(Base):
@@ -22,6 +29,6 @@ class GameClass(Base):
     promotion_def: Mapped[int] = mapped_column(Integer, default=0)
     promotion_res: Mapped[int] = mapped_column(Integer, default=0)
 
-    characters: Mapped[list["Character"]] = relationship(
+    characters: Mapped[list[Character]] = relationship(
         back_populates="game_class"
     )

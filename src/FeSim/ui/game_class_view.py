@@ -55,7 +55,7 @@ class GameClassForm(QWidget):
         # Promotion stats
         for s in self.STAT_FIELDS:
             setattr(self, f"promo_{s}_edit", QLineEdit("0"))
-            form.addRow(f"Promo {s.upper()} :", getattr(self, f"promo_{s}_edit"))
+            form.addRow(f"Promo {s.upper()} +(x) :", getattr(self, f"promo_{s}_edit"))
 
         root.addLayout(form)
 
@@ -145,16 +145,11 @@ class GameClassView(QWidget):
         # ── Buttons row ─────────────────────────────────────────────
         btn_row = QHBoxLayout()
         btn_row.setContentsMargins(8, 6, 8, 6)
-
-        self.add_game_btn = QPushButton("+ Ajouter un jeu")
-        self.add_game_btn.setObjectName("addBtn")
-        self.add_game_btn.setFixedWidth(160)
-        btn_row.addWidget(self.add_game_btn)
+        btn_row.setSpacing(12)
 
         self.add_class_btn = QPushButton("+ Ajouter une classe")
         self.add_class_btn.setObjectName("addBtn")
         self.add_class_btn.setFixedWidth(180)
-        self.add_class_btn.setEnabled(False)
         btn_row.addWidget(self.add_class_btn)
 
         self.edit_btn = QPushButton("Modifier")
@@ -281,7 +276,6 @@ class GameClassView(QWidget):
     def _on_game_selected(self):
         game = self.get_selected_game()
         self._refresh_class_table(game)
-        self.add_class_btn.setEnabled(game is not None)
         self.edit_btn.setEnabled(False)
         self.delete_btn.setEnabled(False)
 

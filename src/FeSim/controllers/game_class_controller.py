@@ -1,6 +1,7 @@
 from FeSim.services.game_class_service import GameClassService
 from FeSim.ui.confirm_dialog import confirm_delete
 from FeSim.ui.game_class_view import GameClassView
+from PySide6.QtWidgets import QMessageBox
 
 
 class GameClassController:
@@ -13,7 +14,6 @@ class GameClassController:
         self._refresh()
 
     def _connect_signals(self):
-        self.view.add_game_btn.clicked.connect(self._on_add_game)
         self.view.add_class_btn.clicked.connect(self._on_add_class)
         self.view.edit_btn.clicked.connect(self._on_edit)
         self.view.delete_btn.clicked.connect(self._on_delete)
@@ -21,17 +21,11 @@ class GameClassController:
         self.view.form.cancelled.connect(self._on_cancel)
 
     # ------------------------------------------------------------------ actions
-    def _on_add_game(self):
-        self.view.show_form(editing=False)
-        self.view.form.game_edit.setText("")
-        self.view.form.game_edit.setFocus()
-
     def _on_add_class(self):
         game = self.view.get_selected_game()
-        if game is None:
-            return
         self.view.show_form(editing=False)
-        self.view.form.game_edit.setText(game)
+        if game:
+            self.view.form.game_edit.setText(game)
 
     def _on_edit(self):
         class_id = self.view.get_selected_class_id()
@@ -48,13 +42,26 @@ class GameClassController:
         class_id = self.view.get_selected_class_id()
         if class_id is None:
             return
-        gc = self.service.get_by_id(class_id)
-        if gc is None:
+        game_class = self.service.get_by_id(class_id)
+        if game_class is None:
             return
-        if confirm_delete(self.view, f"{gc.game} – {gc.class_name}"):
+        if not confirm_delete(
+            self.view,
+            f"{game_class.game} – {game_class.class_name}",
+        ):
+            return
+        try:
             self.service.delete(class_id)
-            self._editing_id = None
-            self._refresh()
+
+        except ValueError as error:
+            QMessageBox.warning(
+                self.view,
+                "Suppression impossible",
+                str(error),
+            )
+            return
+        self._editing_id = None
+        self._refresh()
 
     def _on_save(self):
         data = self.view.form.get_data()

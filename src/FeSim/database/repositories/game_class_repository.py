@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 
-import FeSim.database.entities  # noqa: F401 – ensure all entities are registered
 from FeSim.database.entities.game_class import GameClass
 
 

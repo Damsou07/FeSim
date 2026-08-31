@@ -49,11 +49,9 @@ class CharacterForm(QWidget):
         self.level_edit = QLineEdit("1")
         form.addRow("Niveau :", self.level_edit)
 
-        self.game_edit = QLineEdit()
-        form.addRow("Jeu :", self.game_edit)
-
-        self.class_edit = QLineEdit()
-        form.addRow("Classe :", self.class_edit)
+        self.game_class_combo = QComboBox()
+        self.game_class_combo.setMinimumWidth(200)
+        form.addRow("Classe :", self.game_class_combo)
 
         # --- Base stats ---
         stats_group = QGroupBox("Stats")
@@ -91,13 +89,21 @@ class CharacterForm(QWidget):
         btn_row.addWidget(self.cancel_btn)
         root.addLayout(btn_row)
 
+    # ------------------------------------------------------------------ public api
+    def set_game_classes(self, game_classes: list[dict]):
+        self.game_class_combo.clear()
+        self.game_class_combo.addItem("-- Sélectionner une classe --", None)
+        for gc in game_classes:
+            display = f"{gc['game']} – {gc['class_name']}"
+            self.game_class_combo.addItem(display, gc["id"])
+
     # ------------------------------------------------------------------ helpers
     def reset(self):
         self._editing_id = None
         self.name_edit.clear()
         self.level_edit.setText("1")
-        self.game_edit.clear()
-        self.class_edit.clear()
+        if self.game_class_combo.count() > 0:
+            self.game_class_combo.setCurrentIndex(0)
         for e in self.stat_edits.values():
             e.setText("0")
         for e in self.growth_edits.values():
@@ -107,19 +113,29 @@ class CharacterForm(QWidget):
         self._editing_id = char_id
         self.name_edit.setText(data.get("name", ""))
         self.level_edit.setText(str(data.get("level", 1)))
-        self.game_edit.setText(data.get("game", ""))
-        self.class_edit.setText(data.get("class_name", ""))
+        
+        game_class_id = data.get("game_class_id")
+        if game_class_id is not None:
+            for i in range(self.game_class_combo.count()):
+                if self.game_class_combo.itemData(i) == game_class_id:
+                    self.game_class_combo.setCurrentIndex(i)
+                    break
+        
         for s in self.STAT_FIELDS:
             self.stat_edits[s].setText(str(data.get(s, 0)))
             self.growth_edits[s].setText(str(data.get(f"{s}_growth", 0)))
 
     # ------------------------------------------------------------------ private
     def _on_save(self):
+        game_class_id = self.game_class_combo.currentData()
+        
+        if game_class_id is None:
+            return
+        
         data: dict = {
             "name": self.name_edit.text().strip(),
             "level": int(self.level_edit.text() or "1"),
-            "game": self.game_edit.text().strip(),
-            "class_name": self.class_edit.text().strip(),
+            "game_class_id": game_class_id,
         }
         for s in self.STAT_FIELDS:
             data[s] = int(self.stat_edits[s].text() or "0")

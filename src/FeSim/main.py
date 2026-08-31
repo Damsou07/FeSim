@@ -23,7 +23,7 @@ def main():
     game_class_repo = GameClassRepository(session)
 
     # ── Services ────────────────────────────────────────────────────
-    character_service = CharacterService(character_repo, game_class_repo)
+    character_service = CharacterService(character_repo)
     game_class_service = GameClassService(game_class_repo)
 
     # ── Qt app ──────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ def main():
     gc_ctrl = GameClassController(gc_view, game_class_service)
 
     # ── Character controller ────────────────────────────────────────
-    char_ctrl = CharacterController(window, character_service)
+    char_ctrl = CharacterController(window, character_service, game_class_service)
 
     # ── Navigation ──────────────────────────────────────────────────
     window.navigate_to_classes.connect(

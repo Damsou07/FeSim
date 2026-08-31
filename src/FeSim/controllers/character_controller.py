@@ -1,4 +1,5 @@
 from FeSim.services.character_service import CharacterService
+from FeSim.services.game_class_service import GameClassService
 from FeSim.ui.confirm_dialog import confirm_delete
 from FeSim.ui.main_window import MainWindow
 
@@ -9,9 +10,11 @@ class CharacterController:
         self,
         window: MainWindow,
         service: CharacterService,
+        game_class_service: GameClassService,
     ):
         self.window = window
         self.service = service
+        self.game_class_service = game_class_service
         self._editing_id: int | None = None
 
         self._connect_signals()
@@ -40,6 +43,7 @@ class CharacterController:
 
     def _on_add(self):
         self._editing_id = None
+        self._refresh_game_classes()
         self.window.show_form(editing=False)
 
     def _on_edit(self):
@@ -55,6 +59,7 @@ class CharacterController:
 
         self._editing_id = char_id
 
+        self._refresh_game_classes()
         self.window.form_panel.load_character(
             char_id,
             self.service.to_dict(character),
@@ -98,6 +103,11 @@ class CharacterController:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _refresh_game_classes(self):
+        all_gc = self.game_class_service.get_all()
+        gc_dicts = [self.game_class_service.to_dict(gc) for gc in all_gc]
+        self.window.form_panel.set_game_classes(gc_dicts)
 
     def _refresh_table(self):
         characters = self.service.get_all_characters()

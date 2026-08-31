@@ -18,8 +18,17 @@ class GameClassService:
     def update(self, class_id: int, data: dict) -> GameClass | None:
         return self.repository.update(class_id, **data)
 
-    def delete(self, class_id: int) -> bool:
-        return self.repository.delete(class_id)
+    def delete(self, class_id: int): 
+        game_class = self.repository.get_by_id(class_id)
+        if game_class is None: 
+            return False 
+        if game_class.characters: 
+            raise ValueError( 
+                "Impossible de supprimer cette classe : "
+                "des personnages lui sont associés." 
+            ) 
+        self.repository.delete(class_id) 
+        return True
 
     @staticmethod
     def to_dict(gc: GameClass) -> dict:

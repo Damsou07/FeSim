@@ -23,8 +23,7 @@ class CharacterForm(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumWidth(260)
-        self.setMaximumWidth(420)
+        self.setMaximumWidth(380)
         self._editing_id: int | None = None
         self._build_ui()
 

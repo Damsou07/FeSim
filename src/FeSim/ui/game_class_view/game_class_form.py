@@ -1,10 +1,12 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QComboBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -22,7 +24,7 @@ class GameClassForm(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(280)
+        self.setMaximumWidth(340)
         self._editing_id: int | None = None
         self._build_ui()
 
@@ -35,7 +37,10 @@ class GameClassForm(QWidget):
         self._title_label = title
         root.addWidget(title)
 
-        form = QFormLayout()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        container = QWidget()
+        form = QFormLayout(container)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.game_edit = QLineEdit()
@@ -44,12 +49,22 @@ class GameClassForm(QWidget):
         self.class_edit = QLineEdit()
         form.addRow("Classe :", self.class_edit)
 
+        self.level_class_edit = QComboBox()
+        self.level_class_edit.addItems(["pre promotion", "post promotion"])
+        form.addRow("Niveau :", self.level_class_edit)
+
         # Promotion stats
         for s in self.STAT_FIELDS:
             setattr(self, f"promo_{s}_edit", QLineEdit("0"))
             form.addRow(f"Promo {s.upper()} +(x) :", getattr(self, f"promo_{s}_edit"))
 
-        root.addLayout(form)
+        # Cap stats
+        for s in self.STAT_FIELDS:
+            setattr(self, f"cap_{s}_edit", QLineEdit("0"))
+            form.addRow(f"Cap {s.upper()} :", getattr(self, f"cap_{s}_edit"))
+
+        scroll.setWidget(container)
+        root.addWidget(scroll, 1)
 
         btn_row = QHBoxLayout()
         self.save_btn = QPushButton("Enregistrer")
@@ -63,33 +78,42 @@ class GameClassForm(QWidget):
         btn_row.addWidget(self.cancel_btn)
         root.addLayout(btn_row)
 
-        root.addStretch()
-
     def reset(self):
         self._editing_id = None
         self._title_label.setText("Ajouter une classe")
         self.game_edit.clear()
         self.class_edit.clear()
+        self.level_class_edit.setCurrentIndex(0)
         for s in self.STAT_FIELDS:
             getattr(self, f"promo_{s}_edit").setText("0")
+            getattr(self, f"cap_{s}_edit").setText("0")
 
     def load(self, data: dict):
         self._editing_id = data.get("id")
         self._title_label.setText(f"Modifier : {data.get('class_name', '')}")
         self.game_edit.setText(data.get("game", ""))
         self.class_edit.setText(data.get("class_name", ""))
+        level = data.get("level_class", "pre promotion")
+        idx = self.level_class_edit.findText(level)
+        if idx >= 0:
+            self.level_class_edit.setCurrentIndex(idx)
         for s in self.STAT_FIELDS:
             getattr(self, f"promo_{s}_edit").setText(str(data.get(f"promotion_{s}", 0)))
+            getattr(self, f"cap_{s}_edit").setText(str(data.get(f"cap_{s}", 0)))
 
     def _on_save(self):
         data: dict = {
             "id": self._editing_id,
             "game": self.game_edit.text().strip(),
             "class_name": self.class_edit.text().strip(),
+            "level_class": self.level_class_edit.currentText(),
         }
         for s in self.STAT_FIELDS:
             data[f"promotion_{s}"] = int(
                 getattr(self, f"promo_{s}_edit").text() or "0"
+            )
+            data[f"cap_{s}"] = int(
+                getattr(self, f"cap_{s}_edit").text() or "0"
             )
         if not data["game"] or not data["class_name"]:
             return
@@ -104,9 +128,13 @@ class GameClassForm(QWidget):
             "id": self._editing_id,
             "game": self.game_edit.text().strip(),
             "class_name": self.class_edit.text().strip(),
+            "level_class": self.level_class_edit.currentText(),
         }
         for s in self.STAT_FIELDS:
             data[f"promotion_{s}"] = int(
                 getattr(self, f"promo_{s}_edit").text() or "0"
+            )
+            data[f"cap_{s}"] = int(
+                getattr(self, f"cap_{s}_edit").text() or "0"
             )
         return data

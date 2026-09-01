@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Simulateur d'évolution statistique Fire Emblem")
+        self.setMinimumSize(900, 600)
         self.setWindowState(Qt.WindowState.WindowMaximized)
 
         self._columns = [

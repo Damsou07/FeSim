@@ -22,9 +22,11 @@ class GameClassView(QWidget):
     back_requested = Signal()
 
     CLASS_TABLE_COLS = [
-        "ID", "Jeu", "Classe",
+        "ID", "Jeu", "Classe", "Niveau",
         "Promo HP", "Promo STR", "Promo MAG", "Promo SKL",
         "Promo SPD", "Promo LCK", "Promo DEF", "Promo RES",
+        "Cap HP", "Cap STR", "Cap MAG", "Cap SKL",
+        "Cap SPD", "Cap LCK", "Cap DEF", "Cap RES",
     ]
 
     def __init__(self, parent=None):
@@ -101,9 +103,7 @@ class GameClassView(QWidget):
 
         hdr = self.class_table.horizontalHeader()
         hdr.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        hdr.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        hdr.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        for c in range(3, len(self.CLASS_TABLE_COLS)):
+        for c in range(1, len(self.CLASS_TABLE_COLS)):
             hdr.setSectionResizeMode(c, QHeaderView.ResizeMode.ResizeToContents)
 
         self.class_table.selectionModel().selectionChanged.connect(
@@ -150,9 +150,11 @@ class GameClassView(QWidget):
             row = self.class_table.rowCount()
             self.class_table.insertRow(row)
             keys = [
-                "id", "game", "class_name",
+                "id", "game", "class_name", "level_class",
                 "promotion_hp", "promotion_str", "promotion_mag", "promotion_skl",
                 "promotion_spd", "promotion_lck", "promotion_def", "promotion_res",
+                "cap_hp", "cap_str", "cap_mag", "cap_skl",
+                "cap_spd", "cap_lck", "cap_def", "cap_res",
             ]
             for col, key in enumerate(keys):
                 val = c.get(key, "")

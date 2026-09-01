@@ -13,8 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from FeSim.ui.character_form import CharacterForm
-from FeSim.ui.confirm_dialog import confirm_delete
+from FeSim.ui.main_window_view.character_form import CharacterForm
 from FeSim.ui.glow_delegate import GlowingRowDelegate
 
 

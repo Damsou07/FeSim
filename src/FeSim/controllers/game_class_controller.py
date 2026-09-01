@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from FeSim.services.game_class_service import GameClassService
 from FeSim.ui.confirm_dialog import confirm_delete
-from FeSim.ui.game_class_view import GameClassView
+from FeSim.ui.game_class_view.game_class_view import GameClassView
 
 
 class GameClassController:
@@ -13,6 +13,7 @@ class GameClassController:
         self._editing_id: int | None = None
         self._previous_data: dict | None = None
         self._on_changed_callback = None
+        self._on_form_refresh_callback = None
 
         self._connect_signals()
         self._refresh()
@@ -20,9 +21,14 @@ class GameClassController:
     def set_on_changed(self, callback):
         self._on_changed_callback = callback
 
+    def set_on_form_refresh(self, callback):
+        self._on_form_refresh_callback = callback
+
     def _notify_changed(self):
         if self._on_changed_callback is not None:
             self._on_changed_callback()
+        if self._on_form_refresh_callback is not None:
+            self._on_form_refresh_callback()
 
     def _connect_signals(self):
         self.view.add_class_btn.clicked.connect(self._on_add_class)
@@ -93,6 +99,7 @@ class GameClassController:
             self.service.update(edit_id, data)
         else:
             self.service.create(data)
+            class_changed = True
 
         self._editing_id = None
         self._previous_data = None

@@ -9,8 +9,8 @@ from FeSim.database.repositories.character_repository import CharacterRepository
 from FeSim.database.repositories.game_class_repository import GameClassRepository
 from FeSim.services.character_service import CharacterService
 from FeSim.services.game_class_service import GameClassService
-from FeSim.ui.game_class_view import GameClassView
-from FeSim.ui.main_window import MainWindow
+from FeSim.ui.game_class_view.game_class_view import GameClassView
+from FeSim.ui.main_window_view.main_window import MainWindow
 from FeSim.ui.style import DARK_THEME
 
 
@@ -42,6 +42,7 @@ def main():
 
     # ── Refresh character table when game classes change ────────────
     gc_ctrl.set_on_changed(char_ctrl._refresh_table)
+    gc_ctrl.set_on_form_refresh(char_ctrl._refresh_game_classes)
 
     # ── Navigation ──────────────────────────────────────────────────
     window.navigate_to_classes.connect(

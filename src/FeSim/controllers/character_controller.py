@@ -1,7 +1,7 @@
 from FeSim.services.character_service import CharacterService
 from FeSim.services.game_class_service import GameClassService
 from FeSim.ui.confirm_dialog import confirm_delete
-from FeSim.ui.main_window import MainWindow
+from FeSim.ui.main_window_view.main_window import MainWindow
 
 
 class CharacterController:

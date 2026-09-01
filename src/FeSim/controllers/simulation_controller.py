@@ -85,7 +85,12 @@ class SimulationController:
 
         is_pre_promo = self._game_class and self._game_class.level_class == "pre promotion"
 
+        # Caps for phase 1 (current class)
+        caps_phase1 = self._get_caps_from_gc(self._game_class)
+
         promotion_bonuses = None
+        caps_phase2 = None
+
         if is_pre_promo and self._promotions:
             promo_id = self.view.get_selected_promo_id()
             promo = None
@@ -107,8 +112,30 @@ class SimulationController:
                     "defense": promo.get("promotion_def", 0),
                     "res": promo.get("promotion_res", 0),
                 }
+                # Caps for phase 2 (promoted class)
+                promo_gc = self.game_class_service.get_by_id(promo["id"])
+                caps_phase2 = self._get_caps_from_gc(promo_gc)
 
         result = self.service.simulate_matrix(
-            self._current_character, self._scenario_count, promotion_bonuses
+            self._current_character,
+            self._scenario_count,
+            promotion_bonuses,
+            caps_phase1,
+            caps_phase2,
         )
         self.view.display_matrix(result)
+
+    def _get_caps_from_gc(self, game_class) -> dict:
+        """Extract caps dict from a GameClass entity or None."""
+        if game_class is None:
+            return {key: 999 for key in ["hp", "str", "mag", "skl", "spd", "lck", "defense", "res"]}
+        return {
+            "hp": game_class.cap_hp,
+            "str": game_class.cap_str,
+            "mag": game_class.cap_mag,
+            "skl": game_class.cap_skl,
+            "spd": game_class.cap_spd,
+            "lck": game_class.cap_lck,
+            "defense": game_class.cap_def,
+            "res": game_class.cap_res,
+        }

@@ -4,11 +4,13 @@ from PySide6.QtWidgets import QApplication
 
 from FeSim.controllers.character_controller import CharacterController
 from FeSim.controllers.game_class_controller import GameClassController
+from FeSim.controllers.simulation_controller import SimulationController
 from FeSim.database.connection import Base, engine, get_session
 from FeSim.database.repositories.character_repository import CharacterRepository
 from FeSim.database.repositories.game_class_repository import GameClassRepository
 from FeSim.services.character_service import CharacterService
 from FeSim.services.game_class_service import GameClassService
+from FeSim.services.simulation_service import SimulationService
 from FeSim.ui.game_class_view.game_class_view import GameClassView
 from FeSim.ui.main_window_view.main_window import MainWindow
 from FeSim.ui.style import DARK_THEME
@@ -37,6 +39,12 @@ def main():
     window.stack.addWidget(gc_view)
     gc_ctrl = GameClassController(gc_view, game_class_service)
 
+    # ── Simulation controller ──────────────────────────────────────
+    simulation_service = SimulationService()
+    sim_ctrl = SimulationController(
+        window, window.simulation_view, simulation_service, character_service
+    )
+
     # ── Character controller ────────────────────────────────────────
     char_ctrl = CharacterController(window, character_service, game_class_service)
 
@@ -47,6 +55,9 @@ def main():
     # ── Navigation ──────────────────────────────────────────────────
     window.navigate_to_classes.connect(
         lambda: (window.show_classes_view(), gc_ctrl._refresh())
+    )
+    window.navigate_to_simulation.connect(
+        lambda: window.show_simulation_view()
     )
     window.navigate_back.connect(window.show_character_view)
 

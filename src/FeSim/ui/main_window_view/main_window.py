@@ -16,12 +16,14 @@ from PySide6.QtWidgets import (
 
 from FeSim.ui.main_window_view.character_form import CharacterForm
 from FeSim.ui.glow_delegate import GlowingRowDelegate
+from FeSim.ui.simulation_view.simulation_view import SimulationView
 
 
 class MainWindow(QMainWindow):
     """Main window with character view and game-class navigation."""
 
     navigate_to_classes = Signal()
+    navigate_to_simulation = Signal()
     navigate_back = Signal()
 
     def __init__(self):
@@ -76,6 +78,13 @@ class MainWindow(QMainWindow):
         self.classes_btn.clicked.connect(self.navigate_to_classes.emit)
         nav_layout.addWidget(self.classes_btn)
 
+        self.simulation_btn = QPushButton(">Simulation")
+        self.simulation_btn.setObjectName("navBtn")
+        self.simulation_btn.setFixedWidth(140)
+        self.simulation_btn.setEnabled(False)
+        self.simulation_btn.clicked.connect(self.navigate_to_simulation.emit)
+        nav_layout.addWidget(self.simulation_btn)
+
         nav_layout.addStretch()
 
         self.back_btn = QPushButton("< Retour")
@@ -93,6 +102,10 @@ class MainWindow(QMainWindow):
 
         # Page 0: character spreadsheet
         self.stack.addWidget(self._build_character_page())
+
+        # Page 2: simulation view
+        self.simulation_view = SimulationView()
+        self.stack.addWidget(self.simulation_view)
 
         # placeholder page index stored externally (game class view)
 
@@ -180,12 +193,22 @@ class MainWindow(QMainWindow):
     def show_character_view(self):
         self.stack.setCurrentIndex(0)
         self.classes_btn.setVisible(True)
+        self.simulation_btn.setVisible(True)
         self.back_btn.setVisible(False)
 
     def show_classes_view(self):
+        self.stack.setCurrentIndex(2)
+        self.classes_btn.setVisible(False)
+        self.simulation_btn.setVisible(False)
+        self.back_btn.setVisible(True)
+
+
+    def show_simulation_view(self):
         self.stack.setCurrentIndex(1)
         self.classes_btn.setVisible(False)
+        self.simulation_btn.setVisible(False)
         self.back_btn.setVisible(True)
+
 
     # ------------------------------------------------------------------ public api
     def load_characters(self, rows: list[dict]):
@@ -269,6 +292,7 @@ class MainWindow(QMainWindow):
         has = len(self.table.selectionModel().selectedRows()) > 0
         self.edit_btn.setEnabled(has)
         self.delete_btn.setEnabled(has)
+        self.simulation_btn.setEnabled(has)
 
     def eventFilter(self, obj, event):
         if obj is self.table.viewport() and event.type() == QEvent.Type.MouseButtonPress:

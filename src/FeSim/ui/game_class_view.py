@@ -1,12 +1,11 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QEvent, Signal
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QPushButton,
     QSplitter,
     QTableWidget,
@@ -121,12 +120,12 @@ class GameClassForm(QWidget):
 
 
 class GameClassView(QWidget):
-    """Full-screen view for managing games and their classes."""
+    """Full-screen view for managing game classes."""
 
     back_requested = Signal()
 
     CLASS_TABLE_COLS = [
-        "ID", "Classe",
+        "ID", "Jeu", "Classe",
         "Promo HP", "Promo STR", "Promo MAG", "Promo SKL",
         "Promo SPD", "Promo LCK", "Promo DEF", "Promo RES",
     ]
@@ -166,25 +165,16 @@ class GameClassView(QWidget):
         btn_row.addStretch()
         root.addLayout(btn_row)
 
-        # ── Splitter: game list | classes table + form ──────────────
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        root.addWidget(splitter, 1)
+        # ── Splitter: form (left) | classes table (right) ──────────
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        root.addWidget(self.splitter, 1)
 
-        # Left: game list
-        left = QWidget()
-        left_layout = QVBoxLayout(left)
-        left_layout.setContentsMargins(4, 0, 4, 4)
-        lbl = QLabel("Jeux")
-        lbl.setObjectName("sectionLabel")
-        left_layout.addWidget(lbl)
+        # Left: inline form (hidden by default)
+        self.form = GameClassForm()
+        self.form.setVisible(False)
+        self.splitter.addWidget(self.form)
 
-        self.game_list = QListWidget()
-        self.game_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
-        self.game_list.currentRowChanged.connect(self._on_game_selected)
-        left_layout.addWidget(self.game_list, 1)
-        splitter.addWidget(left)
-
-        # Right: classes table + inline form
+        # Right: classes table
         right = QWidget()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(4, 0, 4, 4)
@@ -196,11 +186,13 @@ class GameClassView(QWidget):
         self.class_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.class_table.verticalHeader().setVisible(False)
         self.class_table.setItemDelegate(GlowingRowDelegate(self.class_table))
+        self.class_table.viewport().installEventFilter(self)
 
         hdr = self.class_table.horizontalHeader()
         hdr.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         hdr.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        for c in range(2, len(self.CLASS_TABLE_COLS)):
+        hdr.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        for c in range(3, len(self.CLASS_TABLE_COLS)):
             hdr.setSectionResizeMode(c, QHeaderView.ResizeMode.ResizeToContents)
 
         self.class_table.selectionModel().selectionChanged.connect(
@@ -208,23 +200,14 @@ class GameClassView(QWidget):
         )
         right_layout.addWidget(self.class_table, 1)
 
-        splitter.addWidget(right)
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
-
-        # ── Inline form (hidden by default) ─────────────────────────
-        self.form = GameClassForm()
-        self.form.setVisible(False)
-        splitter.addWidget(self.form)
+        self.splitter.addWidget(right)
+        self.splitter.setStretchFactor(0, 0)
+        self.splitter.setStretchFactor(1, 1)
 
     # ------------------------------------------------------------------ public api
     def set_classes(self, classes: list[dict]):
         self._all_classes = classes
-        self._refresh_game_list()
-
-    def get_selected_game(self) -> str | None:
-        items = self.game_list.selectedItems()
-        return items[0].text() if items else None
+        self._refresh_class_table()
 
     def get_selected_class_id(self) -> int | None:
         rows = self.class_table.selectionModel().selectedRows()
@@ -240,30 +223,23 @@ class GameClassView(QWidget):
     def hide_form(self):
         self.form.setVisible(False)
 
-    # ------------------------------------------------------------------ private
-    def _refresh_game_list(self):
-        current = self.get_selected_game()
-        games = sorted({c["game"] for c in self._all_classes if c.get("game")})
-        self.game_list.clear()
-        for g in games:
-            self.game_list.addItem(g)
-        # restore selection
-        if current:
-            matches = self.game_list.findItems(current, Qt.MatchFlag.MatchExactly)
-            if matches:
-                self.game_list.setCurrentItem(matches[0])
+    def clear_selection(self):
+        self.class_table.clearSelection()
+        self.edit_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
 
-    def _refresh_class_table(self, game: str | None):
+    # ------------------------------------------------------------------ private
+    def _refresh_class_table(self):
         self.class_table.setRowCount(0)
-        if game is None:
-            return
-        for c in self._all_classes:
-            if c["game"] != game:
-                continue
+        sorted_classes = sorted(
+            self._all_classes,
+            key=lambda c: (c.get("game", ""), c.get("class_name", "")),
+        )
+        for c in sorted_classes:
             row = self.class_table.rowCount()
             self.class_table.insertRow(row)
             keys = [
-                "id", "class_name",
+                "id", "game", "class_name",
                 "promotion_hp", "promotion_str", "promotion_mag", "promotion_skl",
                 "promotion_spd", "promotion_lck", "promotion_def", "promotion_res",
             ]
@@ -273,13 +249,17 @@ class GameClassView(QWidget):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.class_table.setItem(row, col, item)
 
-    def _on_game_selected(self):
-        game = self.get_selected_game()
-        self._refresh_class_table(game)
-        self.edit_btn.setEnabled(False)
-        self.delete_btn.setEnabled(False)
-
     def _on_class_selected(self):
         has = len(self.class_table.selectionModel().selectedRows()) > 0
         self.edit_btn.setEnabled(has)
         self.delete_btn.setEnabled(has)
+
+    def eventFilter(self, obj, event):
+        if obj is self.class_table.viewport() and event.type() == QEvent.Type.MouseButtonPress:
+            if isinstance(event, QMouseEvent):
+                index = self.class_table.indexAt(event.position().toPoint())
+                if not index.isValid():
+                    self.class_table.clearSelection()
+                    self.edit_btn.setEnabled(False)
+                    self.delete_btn.setEnabled(False)
+        return super().eventFilter(obj, event)

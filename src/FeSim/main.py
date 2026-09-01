@@ -40,6 +40,9 @@ def main():
     # ── Character controller ────────────────────────────────────────
     char_ctrl = CharacterController(window, character_service, game_class_service)
 
+    # ── Refresh character table when game classes change ────────────
+    gc_ctrl.set_on_changed(char_ctrl._refresh_table)
+
     # ── Navigation ──────────────────────────────────────────────────
     window.navigate_to_classes.connect(
         lambda: (window.show_classes_view(), gc_ctrl._refresh())

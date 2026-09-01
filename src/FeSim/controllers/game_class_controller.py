@@ -1,17 +1,28 @@
+from PySide6.QtWidgets import QMessageBox
+
 from FeSim.services.game_class_service import GameClassService
 from FeSim.ui.confirm_dialog import confirm_delete
 from FeSim.ui.game_class_view import GameClassView
-from PySide6.QtWidgets import QMessageBox
 
 
 class GameClassController:
+
     def __init__(self, view: GameClassView, service: GameClassService):
         self.view = view
         self.service = service
         self._editing_id: int | None = None
+        self._previous_data: dict | None = None
+        self._on_changed_callback = None
 
         self._connect_signals()
         self._refresh()
+
+    def set_on_changed(self, callback):
+        self._on_changed_callback = callback
+
+    def _notify_changed(self):
+        if self._on_changed_callback is not None:
+            self._on_changed_callback()
 
     def _connect_signals(self):
         self.view.add_class_btn.clicked.connect(self._on_add_class)
@@ -22,10 +33,9 @@ class GameClassController:
 
     # ------------------------------------------------------------------ actions
     def _on_add_class(self):
-        game = self.view.get_selected_game()
+        self._editing_id = None
+        self._previous_data = None
         self.view.show_form(editing=False)
-        if game:
-            self.view.form.game_edit.setText(game)
 
     def _on_edit(self):
         class_id = self.view.get_selected_class_id()
@@ -35,7 +45,8 @@ class GameClassController:
         if gc is None:
             return
         self._editing_id = class_id
-        self.view.form.load(self.service.to_dict(gc))
+        self._previous_data = self.service.to_dict(gc)
+        self.view.form.load(self._previous_data)
         self.view.show_form(editing=True)
 
     def _on_delete(self):
@@ -52,7 +63,6 @@ class GameClassController:
             return
         try:
             self.service.delete(class_id)
-
         except ValueError as error:
             QMessageBox.warning(
                 self.view,
@@ -61,23 +71,40 @@ class GameClassController:
             )
             return
         self._editing_id = None
+        self._previous_data = None
         self._refresh()
+        self._notify_changed()
 
     def _on_save(self):
         data = self.view.form.get_data()
         edit_id = data.pop("id", None)
 
+        class_changed = False
+
         if edit_id is not None:
+            if self._previous_data is not None:
+                old_game = self._previous_data.get("game", "")
+                old_class = self._previous_data.get("class_name", "")
+                new_game = data.get("game", "")
+                new_class = data.get("class_name", "")
+                class_changed = (
+                    old_game != new_game or old_class != new_class
+                )
             self.service.update(edit_id, data)
         else:
             self.service.create(data)
 
         self._editing_id = None
+        self._previous_data = None
         self.view.hide_form()
         self._refresh()
 
+        if class_changed:
+            self._notify_changed()
+
     def _on_cancel(self):
         self._editing_id = None
+        self._previous_data = None
         self.view.hide_form()
 
     # ------------------------------------------------------------------ helpers

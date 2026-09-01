@@ -44,7 +44,7 @@ def main():
     # ── Simulation controller ──────────────────────────────────────
     simulation_service = SimulationService()
     sim_ctrl = SimulationController(
-        window, window.simulation_view, simulation_service, character_service
+        window, window.simulation_view, simulation_service, character_service, game_class_service
     )
 
     # ── Character controller ────────────────────────────────────────

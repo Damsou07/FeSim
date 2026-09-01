@@ -69,6 +69,23 @@ class GameClassController:
         game_class = self.service.get_by_id(class_id)
         if game_class is None:
             return
+
+        # Bloquer la suppression si une autre classe pointe vers celle-ci
+        if game_class.level_class == "post promotion":
+            for gc in self.service.get_all():
+                if gc.id == class_id:
+                    continue
+                to_ids = self.service.get_promotion_to_ids(gc.id)
+                if class_id in to_ids:
+                    QMessageBox.warning(
+                        self.view,
+                        "Suppression impossible",
+                        f"La classe « {game_class.class_name} » est la cible "
+                        f"d'une promotion depuis « {gc.class_name} ». "
+                        "Supprimez d'abord cette association.",
+                    )
+                    return
+
         if not confirm_delete(
             self.view,
             f"{game_class.game} – {game_class.class_name}",

@@ -3,6 +3,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
+    QLineEdit,
     QPushButton,
     QSplitter,
     QTableWidget,
@@ -75,6 +76,20 @@ class GameClassView(QWidget):
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(4, 0, 4, 4)
 
+        # Filter row
+        filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(1, 1, 1, 1)
+        filter_row.setSpacing(6)
+        self._filter_edits: list[QLineEdit] = []
+        for col in range(len(self.CLASS_TABLE_COLS)):
+            fe = QLineEdit()
+            fe.setPlaceholderText(self.CLASS_TABLE_COLS[col])
+            fe.setMaximumHeight(28)
+            fe.textChanged.connect(self._apply_filters)
+            self._filter_edits.append(fe)
+            filter_row.addWidget(fe)
+        right_layout.addLayout(filter_row)
+
         self.class_table = QTableWidget(0, len(self.CLASS_TABLE_COLS))
         self.class_table.setHorizontalHeaderLabels(self.CLASS_TABLE_COLS)
         self.class_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -144,6 +159,19 @@ class GameClassView(QWidget):
                 item = QTableWidgetItem(str(val))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.class_table.setItem(row, col, item)
+        self._apply_filters()
+
+    def _apply_filters(self):
+        for row in range(self.class_table.rowCount()):
+            match = True
+            for col, fe in enumerate(self._filter_edits):
+                text = fe.text().strip().lower()
+                if text:
+                    cell = self.class_table.item(row, col)
+                    if cell is None or text not in cell.text().lower():
+                        match = False
+                        break
+            self.class_table.setRowHidden(row, not match)
 
     def _on_class_selected(self):
         has = len(self.class_table.selectionModel().selectedRows()) > 0

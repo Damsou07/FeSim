@@ -3,6 +3,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
+    QLineEdit,
     QMainWindow,
     QPushButton,
     QSplitter,
@@ -134,6 +135,20 @@ class MainWindow(QMainWindow):
         btn_row.addStretch()
         right_layout.addLayout(btn_row)
 
+        # Filter row
+        filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(1, 1, 1, 1)
+        filter_row.setSpacing(4)
+        self._filter_edits: list[QLineEdit] = []
+        for col in range(len(self._columns)):
+            fe = QLineEdit()
+            fe.setPlaceholderText(self._columns[col])
+            fe.setMaximumHeight(28)
+            fe.textChanged.connect(self._apply_filters)
+            self._filter_edits.append(fe)
+            filter_row.addWidget(fe)
+        right_layout.addLayout(filter_row)
+
         # Table
         self.table = QTableWidget(0, len(self._columns))
         self.table.setHorizontalHeaderLabels(self._columns)
@@ -207,6 +222,18 @@ class MainWindow(QMainWindow):
         row = self.table.rowCount()
         self.table.insertRow(row)
         self._fill_row(row, data)
+
+    def _apply_filters(self):
+        for row in range(self.table.rowCount()):
+            match = True
+            for col, fe in enumerate(self._filter_edits):
+                text = fe.text().strip().lower()
+                if text:
+                    cell = self.table.item(row, col)
+                    if cell is None or text not in cell.text().lower():
+                        match = False
+                        break
+            self.table.setRowHidden(row, not match)
 
     def _fill_row(self, row: int, data: dict):
         keys = [

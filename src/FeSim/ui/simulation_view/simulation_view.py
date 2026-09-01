@@ -67,23 +67,49 @@ class SimulationView(QWidget):
         self.results_container = QWidget()
         self.results_layout = QVBoxLayout(self.results_container)
         self.results_layout.setContentsMargins(0, 10, 0, 0)
-        self.results_layout.setSpacing(10)
+        self.results_layout.setSpacing(16)
 
         self.info_label = QLabel()
         self.info_label.setObjectName("infoLabel")
         self.results_layout.addWidget(self.info_label)
 
-        # Matrix table
-        self.matrix_table = QTableWidget()
-        self.matrix_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.matrix_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.matrix_table.verticalHeader().setVisible(False)
-        self.results_layout.addWidget(self.matrix_table, 1)
+        # Table 1: Average
+        self.table_avg = self._create_matrix_table("Moyenne")
+        self.results_layout.addWidget(self.table_avg)
+
+        # Table 2: Best scenario
+        self.table_best = self._create_matrix_table("Meilleur scénario")
+        self.results_layout.addWidget(self.table_best)
+
+        # Table 3: Worst scenario
+        self.table_worst = self._create_matrix_table("Pire scénario")
+        self.results_layout.addWidget(self.table_worst)
+
+        self.results_layout.addStretch()
 
         scroll.setWidget(self.results_container)
         root_layout.addWidget(scroll, 1)
 
         self.results_container.setVisible(False)
+
+    def _create_matrix_table(self, title_text: str) -> QWidget:
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        label = QLabel(title_text)
+        label.setObjectName("tableTitle")
+        layout.addWidget(label)
+
+        table = QTableWidget()
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        table.verticalHeader().setVisible(False)
+
+        layout.addWidget(table)
+        container._table = table
+        return container
 
     def _on_run_clicked(self):
         self.run_simulation.emit(self.scenario_count.value())
@@ -104,9 +130,8 @@ class SimulationView(QWidget):
         self.promo_label.setVisible(not is_post_promo)
         self.promo_combo.setVisible(not is_post_promo)
 
-    def display_matrix(self, result: dict):
+    def display_matrices(self, result: dict):
         columns = result["columns"]
-        matrix = result["matrix"]
         is_pre_promo = result["is_pre_promo"]
 
         self.info_label.setText(
@@ -115,42 +140,42 @@ class SimulationView(QWidget):
             f"{result['scenario_count']} scénarios"
         )
 
-        # Setup table: rows = stats, cols = level columns + stat label column
-        num_cols = len(columns) + 1  # +1 for stat name column
-        self.matrix_table.setRowCount(len(STAT_KEYS))
-        self.matrix_table.setColumnCount(num_cols)
+        self._fill_matrix_table(self.table_avg._table, columns, result["avg_matrix"], is_pre_promo)
+        self._fill_matrix_table(self.table_best._table, columns, result["best_matrix"], is_pre_promo)
+        self._fill_matrix_table(self.table_worst._table, columns, result["worst_matrix"], is_pre_promo)
 
-        # Headers
-        headers = ["Stat"] + columns
-        self.matrix_table.setHorizontalHeaderLabels(headers)
+        self.results_container.setVisible(True)
 
-        # Fill data
+    def _fill_matrix_table(
+        self, table: QTableWidget, columns: list[str], matrix: dict, is_pre_promo: bool
+    ):
+        num_cols = len(columns) + 1
+        table.setRowCount(len(STAT_KEYS))
+        table.setColumnCount(num_cols)
+        table.setHorizontalHeaderLabels(["Stat"] + columns)
+
+        promo_col = len(columns) // 2 if is_pre_promo else -1
+
         for row, key in enumerate(STAT_KEYS):
-            # Stat name
             stat_item = QTableWidgetItem(STAT_LABELS[row])
             stat_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             font = stat_item.font()
             font.setBold(True)
             stat_item.setFont(font)
-            self.matrix_table.setItem(row, 0, stat_item)
+            table.setItem(row, 0, stat_item)
 
-            # Values
             values = matrix[key]
             for col_idx, val in enumerate(values):
-                item = QTableWidgetItem(str(val))
+                item = QTableWidgetItem(str(int(val)))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
-                # Highlight promotion column
-                if is_pre_promo and col_idx == len(columns) // 2:
+                if is_pre_promo and col_idx == promo_col:
                     item.setBackground(Qt.GlobalColor.darkYellow)
                     item.setForeground(Qt.GlobalColor.white)
 
-                self.matrix_table.setItem(row, col_idx + 1, item)
+                table.setItem(row, col_idx + 1, item)
 
-        # Resize
-        header = self.matrix_table.horizontalHeader()
+        header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         for col in range(1, num_cols):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
-
-        self.results_container.setVisible(True)

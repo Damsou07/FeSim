@@ -123,7 +123,7 @@ class SimulationController:
             caps_phase1,
             caps_phase2,
         )
-        self.view.display_matrix(result)
+        self.view.display_matrices(result)
 
     def _get_caps_from_gc(self, game_class) -> dict:
         """Extract caps dict from a GameClass entity or None."""

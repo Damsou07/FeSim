@@ -16,23 +16,9 @@ class SimulationService:
         caps_phase1: dict | None = None,
         caps_phase2: dict | None = None,
     ) -> dict:
-        """Simulate and return the full level-by-level stat matrix.
-
-        For pre-promotion classes:
-          - Phase 1: levels from start_level to 20 (uses caps_phase1)
-          - Phase 2: apply promotion bonuses, then levels 1 to 20 (uses caps_phase2)
-
-        For post-promotion classes:
-          - levels from start_level to 20 (uses caps_phase1)
-
-        Returns a dict with:
-          - "columns": list of column labels
-          - "matrix": { stat_key: [value_at_level1, value_at_level2, ...] }
-        """
         start_level = character.get("level", 1)
         is_pre_promo = promotion_bonuses is not None
 
-        # Default caps: no limit (999)
         if caps_phase1 is None:
             caps_phase1 = {key: 999 for key in STAT_KEYS}
         if caps_phase2 is None:
@@ -50,55 +36,85 @@ class SimulationService:
             columns = [str(lv) for lv in phase1_levels]
             total_cols = len(phase1_levels)
 
-        # Accumulators for average at each column
+        # Accumulators for average
         accumulators = {key: [0.0] * total_cols for key in STAT_KEYS}
+
+        # Track best and worst scenarios
+        best_total = -1
+        worst_total = float("inf")
+        best_snapshot = None
+        worst_snapshot = None
 
         for _ in range(scenario_count):
             stats = {key: character[key] for key in STAT_KEYS}
+            # Store full path for this scenario
+            snapshot = {key: [0] * total_cols for key in STAT_KEYS}
             col = 0
 
-            # Phase 1: level up to 20
+            # Phase 1
             for lv in phase1_levels:
                 for key in STAT_KEYS:
                     accumulators[key][col] += stats[key]
+                    snapshot[key][col] = stats[key]
                 col += 1
                 if lv < TARGET_LEVEL:
                     for key in STAT_KEYS:
                         growth = character[f"{key}_growth"]
-                        if random.randint(1, 100) <= growth:
-                            if stats[key] < caps_phase1[key]:
+                        if stats[key] < caps_phase1[key]:
+                            if random.randint(1, 100) <= growth:
                                 stats[key] += 1
 
             # Promotion column
             if is_pre_promo:
                 for key in STAT_KEYS:
                     stats[key] += promotion_bonuses.get(key, 0)
-                    # Clamp to phase2 cap after promotion bonus
                     if stats[key] > caps_phase2[key]:
                         stats[key] = caps_phase2[key]
                     accumulators[key][col] += stats[key]
+                    snapshot[key][col] = stats[key]
                 col += 1
 
-                # Phase 2: level 1 -> 20 after promotion
+                # Phase 2
                 for lv in phase2_levels:
                     for key in STAT_KEYS:
                         accumulators[key][col] += stats[key]
+                        snapshot[key][col] = stats[key]
                     col += 1
                     if lv < TARGET_LEVEL:
                         for key in STAT_KEYS:
                             growth = character[f"{key}_growth"]
-                            if random.randint(1, 100) <= growth:
-                                if stats[key] < caps_phase2[key]:
+                            if stats[key] < caps_phase2[key]:
+                                if random.randint(1, 100) <= growth:
                                     stats[key] += 1
 
-        # Average
-        matrix = {}
+            # Total stats at final column for comparison
+            final_col = total_cols - 1
+            total = sum(snapshot[key][final_col] for key in STAT_KEYS)
+
+            if total > best_total:
+                best_total = total
+                best_snapshot = snapshot
+            if total < worst_total:
+                worst_total = total
+                worst_snapshot = snapshot
+
+        # Build average matrix
+        avg_matrix = {}
         for key in STAT_KEYS:
-            matrix[key] = [round(v / scenario_count, 1) for v in accumulators[key]]
+            avg_matrix[key] = [round(v / scenario_count, 1) for v in accumulators[key]]
+
+        # Build best/worst matrices (convert to float for consistency)
+        best_matrix = {}
+        worst_matrix = {}
+        for key in STAT_KEYS:
+            best_matrix[key] = [float(v) for v in best_snapshot[key]]
+            worst_matrix[key] = [float(v) for v in worst_snapshot[key]]
 
         return {
             "columns": columns,
-            "matrix": matrix,
+            "avg_matrix": avg_matrix,
+            "best_matrix": best_matrix,
+            "worst_matrix": worst_matrix,
             "start_level": start_level,
             "target_level": TARGET_LEVEL,
             "scenario_count": scenario_count,

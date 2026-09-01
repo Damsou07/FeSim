@@ -43,8 +43,8 @@ class GameClassController:
         self._previous_data = None
         all_classes = [self.service.to_dict(gc) for gc in self.service.get_all()]
         self.view.form.set_all_classes(all_classes)
-        self.view.form.set_promotion_choices(exclude_id=None)
         self.view.show_form(editing=False)
+        self.view.form.set_promotion_choices(exclude_id=None)
 
     def _on_edit(self):
         class_id = self.view.get_selected_class_id()
@@ -58,9 +58,9 @@ class GameClassController:
         self._previous_data["promotion_to_ids"] = self.service.get_promotion_to_ids(class_id)
         all_classes = [self.service.to_dict(gc) for gc in self.service.get_all()]
         self.view.form.set_all_classes(all_classes)
+        self.view.show_form(editing=True)
         self.view.form.set_promotion_choices(exclude_id=class_id)
         self.view.form.load(self._previous_data)
-        self.view.show_form(editing=True)
 
     def _on_delete(self):
         class_id = self.view.get_selected_class_id()
@@ -91,6 +91,28 @@ class GameClassController:
     def _on_save(self):
         data = self.view.form.get_data()
         edit_id = data.pop("id", None)
+
+        # Vérifier si la classe a des promotions entrantes (elle est cible d'une autre classe)
+        if edit_id is not None:
+            incoming = self.service.get_promotion_to_ids(edit_id)
+            # Si la classe est une cible de promotion (elle est "post promotion")
+            # et qu'elle a des promotions entrantes, vérifier si on change de type
+            current_gc = self.service.get_by_id(edit_id)
+            if current_gc and current_gc.level_class == "post promotion":
+                # Chercher si une autre classe pointe vers cette classe
+                for gc in self.service.get_all():
+                    if gc.id == edit_id:
+                        continue
+                    to_ids = self.service.get_promotion_to_ids(gc.id)
+                    if edit_id in to_ids:
+                        QMessageBox.warning(
+                            self.view,
+                            "Modification impossible",
+                            f"La classe « {current_gc.class_name} » est la cible "
+                            f"d'une promotion depuis « {gc.class_name} ». "
+                            "Vous devez d'abord supprimer cette association.",
+                        )
+                        return
 
         class_changed = False
 

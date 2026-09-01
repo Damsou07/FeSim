@@ -62,7 +62,7 @@ class GameClassForm(QWidget):
         self._promo_list_label = QLabel("Classe(s) de\npromotion :")
         self.promotion_list = QListWidget()
         self.promotion_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
-        self.promotion_list.setMaximumHeight(120)
+        self.promotion_list.setMaximumHeight(160)
         self._promotion_ids: list[int] = []
         self._form.addRow(self._promo_list_label, self.promotion_list)
 
@@ -95,6 +95,8 @@ class GameClassForm(QWidget):
         self.cancel_btn.clicked.connect(self._on_cancel)
         btn_row.addWidget(self.cancel_btn)
         root.addLayout(btn_row)
+
+        self._on_level_changed()
 
     def _on_level_changed(self):
         is_pre = self.level_class_edit.currentText() == "pre promotion"

@@ -7,9 +7,6 @@ from FeSim.ui.simulation_view.simulation_view import SimulationView
 from FeSim.ui.main_window_view.main_window import MainWindow
 
 
-STAT_KEYS = ["hp", "str", "mag", "skl", "spd", "lck", "defense", "res"]
-
-
 class SimulationController:
 
     def __init__(
@@ -26,6 +23,7 @@ class SimulationController:
         self.character_service = character_service
         self.game_class_service = game_class_service
         self._current_character: dict | None = None
+        self._game_class = None
         self._promotions: list[dict] = []
         self._scenario_count: int = 1000
 
@@ -36,8 +34,8 @@ class SimulationController:
         self.view.promo_combo.currentIndexChanged.connect(self._on_promo_changed)
 
     def _on_promo_changed(self, index: int):
-        if index >= 0 and self._current_character is not None:
-            self._run_simulation(self._scenario_count)
+        if index >= 0 and self._current_character is not None and self._game_class is not None:
+            self._run_simulation()
 
     def _on_run_simulation(self, scenario_count: int):
         self._scenario_count = scenario_count
@@ -50,22 +48,18 @@ class SimulationController:
             return
 
         self._current_character = self.character_service.to_dict(character)
-
-        # Get the character's game class
-        game_class = self.game_class_service.get_by_id(character.game_class_id)
-        if game_class is None:
+        self._game_class = self.game_class_service.get_by_id(character.game_class_id)
+        if self._game_class is None:
             return
 
-        is_post_promo = game_class.level_class == "post promotion"
+        is_post_promo = self._game_class.level_class == "post promotion"
 
         if is_post_promo:
-            # Post-promotion: only level 20 table
             self.view.set_post_promo_mode(True)
-            result = self.service.simulate(self._current_character, scenario_count)
-            self.view.display_results(result, post_promo_result=None)
+            self._promotions = []
+            self._run_simulation()
         else:
-            # Pre-promotion: check if promotions exist
-            to_ids = self.game_class_service.get_promotion_to_ids(game_class.id)
+            to_ids = self.game_class_service.get_promotion_to_ids(self._game_class.id)
             self._promotions = []
             for pid in to_ids:
                 promo_gc = self.game_class_service.get_by_id(pid)
@@ -83,40 +77,38 @@ class SimulationController:
 
             self.view.set_post_promo_mode(False)
             self.view.set_promotion_choices(self._promotions)
+            self._run_simulation()
 
-            # Run level 20 simulation
-            self._run_simulation(scenario_count)
-
-    def _run_simulation(self, scenario_count: int):
+    def _run_simulation(self):
         if self._current_character is None:
             return
 
-        result = self.service.simulate(self._current_character, scenario_count)
+        is_pre_promo = self._game_class and self._game_class.level_class == "pre promotion"
 
-        # Run post-promotion simulation if a promotion is selected
-        post_promo_result = None
-        if self._promotions:
+        promotion_bonuses = None
+        if is_pre_promo and self._promotions:
             promo_id = self.view.get_selected_promo_id()
             promo = None
             for p in self._promotions:
                 if p["id"] == promo_id:
                     promo = p
                     break
-            if promo is None:
+            if promo is None and self._promotions:
                 promo = self._promotions[0]
 
-            bonuses = {
-                "hp": promo.get("promotion_hp", 0),
-                "str": promo.get("promotion_str", 0),
-                "mag": promo.get("promotion_mag", 0),
-                "skl": promo.get("promotion_skl", 0),
-                "spd": promo.get("promotion_spd", 0),
-                "lck": promo.get("promotion_lck", 0),
-                "defense": promo.get("promotion_def", 0),
-                "res": promo.get("promotion_res", 0),
-            }
-            post_promo_result = self.service.simulate_post_promotion(
-                self._current_character, bonuses, scenario_count
-            )
+            if promo:
+                promotion_bonuses = {
+                    "hp": promo.get("promotion_hp", 0),
+                    "str": promo.get("promotion_str", 0),
+                    "mag": promo.get("promotion_mag", 0),
+                    "skl": promo.get("promotion_skl", 0),
+                    "spd": promo.get("promotion_spd", 0),
+                    "lck": promo.get("promotion_lck", 0),
+                    "defense": promo.get("promotion_def", 0),
+                    "res": promo.get("promotion_res", 0),
+                }
 
-        self.view.display_results(result, post_promo_result=post_promo_result)
+        result = self.service.simulate_matrix(
+            self._current_character, self._scenario_count, promotion_bonuses
+        )
+        self.view.display_matrix(result)

@@ -1,91 +1,96 @@
 import random
-import math
 
 
 STAT_KEYS = ["hp", "str", "mag", "skl", "spd", "lck", "defense", "res"]
+STAT_LABELS = ["HP", "STR", "MAG", "SKL", "SPD", "LCK", "DEF", "RES"]
 TARGET_LEVEL = 20
 
 
 class SimulationService:
 
-    def simulate(self, character: dict, scenario_count: int) -> dict:
-        start_level = character.get("level", 1)
-        levels_to_simulate = TARGET_LEVEL - start_level
-        if levels_to_simulate <= 0:
-            return self._make_result(character, scenario_count, {})
+    def simulate_matrix(
+        self,
+        character: dict,
+        scenario_count: int,
+        promotion_bonuses: dict | None = None,
+    ) -> dict:
+        """Simulate and return the full level-by-level stat matrix.
 
-        accumulators = {key: 0.0 for key in STAT_KEYS}
-        squared_accumulators = {key: 0.0 for key in STAT_KEYS}
-        min_stats = {key: character[key] for key in STAT_KEYS}
-        max_stats = {key: character[key] for key in STAT_KEYS}
+        For pre-promotion classes:
+          - Phase 1: levels from start_level to 20
+          - Phase 2: apply promotion bonuses, then levels 1 to 20
+
+        For post-promotion classes:
+          - levels from start_level to 20
+
+        Returns a dict with:
+          - "columns": list of column labels (e.g. ["1", "2", ..., "20", "↑", "1", "2", ..., "20"])
+          - "matrix": { stat_key: [value_at_level1, value_at_level2, ...] }
+        """
+        start_level = character.get("level", 1)
+        is_pre_promo = promotion_bonuses is not None
+
+        # Build column headers and compute average stats at each level
+        if is_pre_promo:
+            # Phase 1: start_level -> 20
+            phase1_levels = list(range(start_level, TARGET_LEVEL + 1))
+            # Phase 2: after promotion, levels 1 -> 20
+            phase2_levels = list(range(1, TARGET_LEVEL + 1))
+            columns = [str(lv) for lv in phase1_levels] + ["↑"] + [str(lv) for lv in phase2_levels]
+            total_cols = len(phase1_levels) + 1 + len(phase2_levels)
+        else:
+            phase1_levels = list(range(start_level, TARGET_LEVEL + 1))
+            phase2_levels = []
+            columns = [str(lv) for lv in phase1_levels]
+            total_cols = len(phase1_levels)
+
+        # Accumulators for average at each column
+        accumulators = {key: [0.0] * total_cols for key in STAT_KEYS}
 
         for _ in range(scenario_count):
             stats = {key: character[key] for key in STAT_KEYS}
-            for _ in range(levels_to_simulate):
+            col = 0
+
+            # Phase 1: level up to 20
+            for lv in phase1_levels:
                 for key in STAT_KEYS:
-                    growth = character[f"{key}_growth"]
-                    if random.randint(1, 100) <= growth:
-                        stats[key] += 1
-            for key in STAT_KEYS:
-                accumulators[key] += stats[key]
-                squared_accumulators[key] += stats[key] ** 2
-                min_stats[key] = min(min_stats[key], stats[key])
-                max_stats[key] = max(max_stats[key], stats[key])
+                    accumulators[key][col] += stats[key]
+                col += 1
+                if lv < TARGET_LEVEL:
+                    for key in STAT_KEYS:
+                        growth = character[f"{key}_growth"]
+                        if random.randint(1, 100) <= growth:
+                            stats[key] += 1
 
-        avg_stats = {
-            key: round(accumulators[key] / scenario_count, 1)
-            for key in STAT_KEYS
-        }
-        variance_stats = {
-            key: round(
-                (squared_accumulators[key] / scenario_count) - (accumulators[key] / scenario_count) ** 2,
-                1
-            )
-            for key in STAT_KEYS
-        }
+            # Promotion column
+            if is_pre_promo:
+                for key in STAT_KEYS:
+                    stats[key] += promotion_bonuses.get(key, 0)
+                    accumulators[key][col] += stats[key]
+                col += 1
 
-        return self._make_result(character, scenario_count, avg_stats, min_stats, max_stats, variance_stats)
+                # Phase 2: level 1 -> 20 after promotion
+                for lv in phase2_levels:
+                    for key in STAT_KEYS:
+                        accumulators[key][col] += stats[key]
+                    col += 1
+                    if lv < TARGET_LEVEL:
+                        for key in STAT_KEYS:
+                            growth = character[f"{key}_growth"]
+                            if random.randint(1, 100) <= growth:
+                                stats[key] += 1
 
-    def simulate_post_promotion(
-        self, character: dict, promotion_bonuses: dict, scenario_count: int
-    ) -> dict:
-        """Simulate stats at level 1 after promotion with bonuses applied."""
-        # Start with current stats + promotion bonuses
-        base_after_promo = {}
+        # Average
+        matrix = {}
         for key in STAT_KEYS:
-            base_after_promo[key] = character[key] + promotion_bonuses.get(key, 0)
+            matrix[key] = [round(v / scenario_count, 1) for v in accumulators[key]]
 
         return {
-            "character_name": character.get("name", "Inconnu"),
-            "start_level": 1,
-            "target_level": 1,
-            "scenario_count": scenario_count,
-            "base_stats": base_after_promo,
-            "growth_rates": {key: character[f"{key}_growth"] for key in STAT_KEYS},
-            "avg_stats": base_after_promo.copy(),
-            "min_stats": base_after_promo.copy(),
-            "max_stats": base_after_promo.copy(),
-            "variance_stats": {key: 0.0 for key in STAT_KEYS},
-        }
-
-    @staticmethod
-    def _make_result(
-        character: dict,
-        scenario_count: int,
-        avg_stats: dict,
-        min_stats: dict | None = None,
-        max_stats: dict | None = None,
-        variance_stats: dict | None = None,
-    ) -> dict:
-        return {
-            "character_name": character.get("name", "Inconnu"),
-            "start_level": character.get("level", 1),
+            "columns": columns,
+            "matrix": matrix,
+            "start_level": start_level,
             "target_level": TARGET_LEVEL,
             "scenario_count": scenario_count,
-            "base_stats": {key: character[key] for key in STAT_KEYS},
-            "growth_rates": {key: character[f"{key}_growth"] for key in STAT_KEYS},
-            "avg_stats": avg_stats,
-            "min_stats": min_stats,
-            "max_stats": max_stats,
-            "variance_stats": variance_stats,
+            "character_name": character.get("name", "Inconnu"),
+            "is_pre_promo": is_pre_promo,
         }

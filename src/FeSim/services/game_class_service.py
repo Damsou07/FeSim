@@ -1,10 +1,12 @@
 from FeSim.database.entities.game_class import GameClass
 from FeSim.database.repositories.game_class_repository import GameClassRepository
+from FeSim.database.repositories.promotion_repository import PromotionRepository
 
 
 class GameClassService:
-    def __init__(self, repository: GameClassRepository):
+    def __init__(self, repository: GameClassRepository, promotion_repository: PromotionRepository):
         self.repository = repository
+        self.promotion_repository = promotion_repository
 
     def get_all(self) -> list[GameClass]:
         return self.repository.get_all()
@@ -13,22 +15,36 @@ class GameClassService:
         return self.repository.get_by_id(class_id)
 
     def create(self, data: dict) -> GameClass:
-        return self.repository.create(**data)
+        promo_to_ids = data.pop("promotion_to_ids", [])
+        gc = self.repository.create(**data)
+        if promo_to_ids:
+            self.promotion_repository.set_promotions(gc.id, promo_to_ids)
+        return gc
 
     def update(self, class_id: int, data: dict) -> GameClass | None:
-        return self.repository.update(class_id, **data)
+        promo_to_ids = data.pop("promotion_to_ids", None)
+        gc = self.repository.update(class_id, **data)
+        if gc is not None and promo_to_ids is not None:
+            self.promotion_repository.set_promotions(class_id, promo_to_ids)
+        return gc
 
-    def delete(self, class_id: int): 
+    def delete(self, class_id: int):
         game_class = self.repository.get_by_id(class_id)
-        if game_class is None: 
-            return False 
-        if game_class.characters: 
-            raise ValueError( 
+        if game_class is None:
+            return False
+        if game_class.characters:
+            raise ValueError(
                 "Impossible de supprimer cette classe : "
-                "des personnages lui sont associés." 
-            ) 
-        self.repository.delete(class_id) 
+                "des personnages lui sont associés."
+            )
+        # Delete related promotions
+        self.promotion_repository.set_promotions(class_id, [])
+        self.repository.delete(class_id)
         return True
+
+    def get_promotion_to_ids(self, from_class_id: int) -> list[int]:
+        promos = self.promotion_repository.get_by_from_class(from_class_id)
+        return [p.to_game_class_id for p in promos]
 
     @staticmethod
     def to_dict(gc: GameClass) -> dict:

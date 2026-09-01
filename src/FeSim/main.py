@@ -8,6 +8,7 @@ from FeSim.controllers.simulation_controller import SimulationController
 from FeSim.database.connection import Base, engine, get_session
 from FeSim.database.repositories.character_repository import CharacterRepository
 from FeSim.database.repositories.game_class_repository import GameClassRepository
+from FeSim.database.repositories.promotion_repository import PromotionRepository
 from FeSim.services.character_service import CharacterService
 from FeSim.services.game_class_service import GameClassService
 from FeSim.services.simulation_service import SimulationService
@@ -23,10 +24,11 @@ def main():
     # ── Repositories ────────────────────────────────────────────────
     character_repo = CharacterRepository(session)
     game_class_repo = GameClassRepository(session)
+    promotion_repo = PromotionRepository(session)
 
     # ── Services ────────────────────────────────────────────────────
     character_service = CharacterService(character_repo)
-    game_class_service = GameClassService(game_class_repo)
+    game_class_service = GameClassService(game_class_repo, promotion_repo)
 
     # ── Qt app ──────────────────────────────────────────────────────
     app = QApplication(sys.argv)

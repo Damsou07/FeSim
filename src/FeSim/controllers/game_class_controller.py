@@ -41,6 +41,9 @@ class GameClassController:
     def _on_add_class(self):
         self._editing_id = None
         self._previous_data = None
+        all_classes = [self.service.to_dict(gc) for gc in self.service.get_all()]
+        self.view.form.set_all_classes(all_classes)
+        self.view.form.set_promotion_choices(exclude_id=None)
         self.view.show_form(editing=False)
 
     def _on_edit(self):
@@ -52,6 +55,10 @@ class GameClassController:
             return
         self._editing_id = class_id
         self._previous_data = self.service.to_dict(gc)
+        self._previous_data["promotion_to_ids"] = self.service.get_promotion_to_ids(class_id)
+        all_classes = [self.service.to_dict(gc) for gc in self.service.get_all()]
+        self.view.form.set_all_classes(all_classes)
+        self.view.form.set_promotion_choices(exclude_id=class_id)
         self.view.form.load(self._previous_data)
         self.view.show_form(editing=True)
 
@@ -117,4 +124,6 @@ class GameClassController:
     # ------------------------------------------------------------------ helpers
     def _refresh(self):
         all_gc = self.service.get_all()
-        self.view.set_classes([self.service.to_dict(gc) for gc in all_gc])
+        all_dicts = [self.service.to_dict(gc) for gc in all_gc]
+        self.view.set_classes(all_dicts)
+        self.view.form.set_all_classes(all_dicts)

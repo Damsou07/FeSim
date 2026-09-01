@@ -7,7 +7,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..connection import Base
 
+
 if TYPE_CHECKING:
+    from FeSim.database.entities.promotion import Promotion
     from FeSim.database.entities.character import Character
 
 
@@ -16,7 +18,7 @@ class GameClass(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    # Niveau de la classe à que deux valeurs possible "pre promotion" ou post promotion"
+    # Niveau de la classe à que deux valeurs possible "pre promotion" ou "post promotion"
     level_class: Mapped[str] = mapped_column(String, nullable=False)
 
     game: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -42,6 +44,20 @@ class GameClass(Base):
     cap_def: Mapped[int] = mapped_column(Integer, default=0)
     cap_res: Mapped[int] = mapped_column(Integer, default=0)
 
-    characters: Mapped[list[Character]] = relationship(
-        back_populates="game_class"
+    characters: Mapped[list["Character"]] = relationship(
+        "Character",
+        back_populates="game_class",
+    )
+
+    # Relations de promotion
+    promotions_from: Mapped[list["Promotion"]] = relationship(
+        "Promotion",
+        foreign_keys="Promotion.from_game_class_id",
+        back_populates="from_game_class",
+    )
+
+    promotions_to: Mapped[list["Promotion"]] = relationship(
+        "Promotion",
+        foreign_keys="Promotion.to_game_class_id",
+        back_populates="to_game_class",
     )

@@ -73,6 +73,13 @@ class MainWindow(QMainWindow):
         nav_layout = QHBoxLayout(nav)
         nav_layout.setContentsMargins(10, 0, 10, 0)
 
+        self.back_btn = QPushButton("< Retour")
+        self.back_btn.setObjectName("navBtn")
+        self.back_btn.setFixedWidth(120)
+        self.back_btn.setVisible(False)
+        self.back_btn.clicked.connect(self.navigate_back.emit)
+        nav_layout.addWidget(self.back_btn)
+
         self.classes_btn = QPushButton(">Liste des classes")
         self.classes_btn.setObjectName("navBtn")
         self.classes_btn.setFixedWidth(160)
@@ -87,14 +94,6 @@ class MainWindow(QMainWindow):
         nav_layout.addWidget(self.simulation_btn)
 
         nav_layout.addStretch()
-
-        self.back_btn = QPushButton("< Retour")
-        self.back_btn.setObjectName("navBtn")
-        self.back_btn.setFixedWidth(120)
-        self.back_btn.setVisible(False)
-        self.back_btn.clicked.connect(self.navigate_back.emit)
-        nav_layout.addWidget(self.back_btn)
-
         root.addWidget(nav)
 
         # ── Stacked pages ───────────────────────────────────────────

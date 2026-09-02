@@ -3,6 +3,19 @@ import random
 
 STAT_KEYS = ["hp", "str", "mag", "skl", "spd", "lck", "defense", "res"]
 STAT_LABELS = ["HP", "STR", "MAG", "SKL", "SPD", "LCK", "DEF", "RES"]
+
+# Poids
+STAT_WEIGHTS = {
+    "hp": 0.6,
+    "str": 1.25,
+    "mag": 1.25,
+    "skl": 0.75,
+    "spd": 1.50,
+    "lck": 0.35,
+    "defense": 1.25,
+    "res": 1.00,
+}
+
 TARGET_LEVEL = 20
 
 
@@ -50,7 +63,15 @@ class SimulationService:
 
         # Définis si l'unité est une unité magique ou physique
         ismagic = character.get("mag", 0) >= character.get("str", 0)
+        excluded_stat = "str" if ismagic else "mag"
 
+        # diviseur pour calcul score
+        total_weight = sum(
+            STAT_WEIGHTS[key]
+            for key in STAT_KEYS
+            if key != excluded_stat
+        )
+        
         for _ in range(scenario_count):
             stats = {key: character[key] for key in STAT_KEYS}
             # Store full path for this scenario
@@ -96,17 +117,16 @@ class SimulationService:
             # définis le pire et meilleure scénario, pour une unité physique la mag est retiré du calcul
             # pour une unité magique la force est retiré du calcul
             final_col = total_cols - 1
-            excluded_stat = "str" if ismagic else "mag"
 
             total = sum(
-                snapshot[key][final_col]
+                snapshot[key][final_col] * STAT_WEIGHTS[key]
                 for key in STAT_KEYS
                 if key != excluded_stat
             )
 
             # calcule le score moyen de tous les scénarios
             total_score_sum += total
-
+           
             if total > best_total:
                 best_total = total
                 best_snapshot = snapshot
@@ -128,9 +148,9 @@ class SimulationService:
             worst_matrix[key] = [float(v) for v in worst_snapshot[key]]
 
         # Scores finaux
-        score_average = total_score_sum / scenario_count
-        score_best = best_total
-        score_worst = worst_total
+        score_average = total_score_sum / scenario_count / total_weight
+        score_best = best_total / total_weight
+        score_worst = worst_total / total_weight
 
         return {
             "columns": columns,

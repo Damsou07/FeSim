@@ -41,8 +41,8 @@ class SimulationView(QWidget):
 
         self.scenario_count = QSpinBox()
         self.scenario_count.setMinimum(1)
-        self.scenario_count.setMaximum(10000)
-        self.scenario_count.setValue(1000)
+        self.scenario_count.setMaximum(1000)
+        self.scenario_count.setValue(50)
         controls_layout.addWidget(self.scenario_count)
 
         # Promotion chooser

@@ -123,6 +123,8 @@ class SimulationController:
             caps_phase1,
             caps_phase2,
         )
+        result["caps_phase1"] = caps_phase1
+        result["caps_phase2"] = caps_phase2 or caps_phase1
         self.view.display_matrices(result)
 
     def _get_caps_from_gc(self, game_class) -> dict:

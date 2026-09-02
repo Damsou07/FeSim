@@ -409,4 +409,103 @@ QListWidget::item:selected {
 QListWidget::item:hover:!selected {
     background-color: #1e2030;
 }
+
+/* ── Simulation view ────────────────────────────────────────────────── */
+QLabel#pageTitle {
+    color: #eef0f8;
+    font-size: 22px;
+    font-weight: 700;
+    padding: 0;
+}
+
+QLabel#pageSubtitle {
+    color: #707890;
+    font-size: 13px;
+    padding-bottom: 4px;
+}
+
+QFrame#simulationControls {
+    background-color: #161820;
+    border: 1px solid #2a2e3c;
+    border-radius: 8px;
+}
+
+QLabel#controlLabel {
+    color: #8090a8;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+QPushButton#simulationBtn {
+    background-color: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #1a4a8a, stop:1 #2a6ab0
+    );
+    color: #e8f0ff;
+    border: 1px solid #3a7ac8;
+    font-weight: 600;
+    padding: 8px 20px;
+    min-width: 180px;
+}
+
+QPushButton#simulationBtn:hover {
+    background-color: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #2258a0, stop:1 #3480c8
+    );
+    border-color: #5a9aee;
+    color: #ffffff;
+}
+
+QPushButton#simulationBtn:pressed {
+    background-color: #143060;
+}
+
+QLabel#infoLabel {
+    background-color: #161820;
+    border: 1px solid #2a3a5a;
+    border-radius: 8px;
+    color: #c0c8dc;
+    font-size: 14px;
+    padding: 12px 16px;
+}
+
+QFrame#matrixCard {
+    background-color: #14161e;
+    border: 1px solid #2a2e3c;
+    border-radius: 8px;
+}
+
+QLabel#tableTitle {
+    color: #8aa8d8;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+QTableWidget#matrixTable {
+    background-color: #12141c;
+    alternate-background-color: #161820;
+    border: none;
+    border-radius: 0;
+    gridline-color: #252830;
+}
+
+QTableWidget#matrixTable::item {
+    padding: 6px 10px;
+}
+
+QTableWidget#matrixTable QHeaderView::section {
+    background-color: #1a1e28;
+    color: #9098b0;
+    border-bottom: 2px solid #3a5a8a;
+    padding: 8px 10px;
+}
+
+QScrollArea#matrixScroll {
+    background-color: transparent;
+}
 """

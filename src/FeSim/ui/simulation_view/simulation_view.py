@@ -15,17 +15,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from FeSim.ui.matrix_cell_delegate import MatrixCellDelegate
+
 
 STAT_LABELS = ["HP", "STR", "MAG", "SKL", "SPD", "LCK", "DEF", "RES"]
 STAT_KEYS = ["hp", "str", "mag", "skl", "spd", "lck", "defense", "res"]
 
 CAP_BG = QColor("#1e7a3a")
 CAP_FG = QColor("#ffffff")
-PROMO_BG = QColor("#7a6520")
-PROMO_FG = QColor("#fff8dc")
+PROMO_BG = QColor("#D9602C")
+PROMO_FG = QColor("#ffffff")
 ROW_BG = QColor("#12141c")
 ROW_ALT_BG = QColor("#161820")
 STAT_COL_BG = QColor("#1a1e28")
+
+_MATRIX_DELEGATE = MatrixCellDelegate()
 
 
 class SimulationView(QWidget):
@@ -144,6 +148,7 @@ class SimulationView(QWidget):
         stat_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         stat_table.setShowGrid(True)
         stat_table.setMouseTracking(False)
+        stat_table.setItemDelegate(_MATRIX_DELEGATE)
 
         h_scroll = QScrollArea()
         h_scroll.setObjectName("matrixScroll")
@@ -162,6 +167,7 @@ class SimulationView(QWidget):
         data_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         data_table.setShowGrid(True)
         data_table.setMouseTracking(False)
+        data_table.setItemDelegate(_MATRIX_DELEGATE)
 
         h_scroll.setWidget(data_table)
         matrix_row_layout.addWidget(stat_table)
@@ -278,7 +284,7 @@ class SimulationView(QWidget):
             font.setBold(True)
             stat_item.setFont(font)
             stat_item.setBackground(QBrush(STAT_COL_BG))
-            stat_item.setForeground(QBrush(QColor("#1d4f8d")))
+            stat_item.setForeground(QBrush(QColor("#c0c8dc")))
             stat_table.setItem(row, 0, stat_item)
 
             values = matrix[key]
@@ -292,13 +298,13 @@ class SimulationView(QWidget):
 
                 if display_val == cap_for_stat_cols[col_idx]:
                     item.setBackground(QBrush(CAP_BG))
-                    item.setForeground(QBrush(CAP_BG))
+                    item.setForeground(QBrush(CAP_FG))
                 elif is_pre_promo and col_idx == promo_col:
                     item.setBackground(QBrush(PROMO_BG))
                     item.setForeground(QBrush(PROMO_FG))
                 else:
                     item.setBackground(QBrush(row_bg))
-                    item.setForeground(QBrush(QColor("#d4dad0")))
+                    item.setForeground(QBrush(QColor("#d0d0da")))
 
                 data_table.setItem(row, col_idx, item)
 

@@ -19,10 +19,13 @@ from PySide6.QtWidgets import (
 STAT_LABELS = ["HP", "STR", "MAG", "SKL", "SPD", "LCK", "DEF", "RES"]
 STAT_KEYS = ["hp", "str", "mag", "skl", "spd", "lck", "defense", "res"]
 
-CAP_BG = QColor("#1a5c32")
-CAP_FG = QColor("#c8f5d4")
+CAP_BG = QColor("#1e7a3a")
+CAP_FG = QColor("#ffffff")
 PROMO_BG = QColor("#7a6520")
 PROMO_FG = QColor("#fff8dc")
+ROW_BG = QColor("#12141c")
+ROW_ALT_BG = QColor("#161820")
+STAT_COL_BG = QColor("#1a1e28")
 
 
 class SimulationView(QWidget):
@@ -126,6 +129,22 @@ class SimulationView(QWidget):
         label.setObjectName("tableTitle")
         layout.addWidget(label)
 
+        matrix_row = QWidget()
+        matrix_row_layout = QHBoxLayout(matrix_row)
+        matrix_row_layout.setContentsMargins(0, 0, 0, 0)
+        matrix_row_layout.setSpacing(0)
+
+        stat_table = QTableWidget()
+        stat_table.setObjectName("matrixStatTable")
+        stat_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        stat_table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
+        stat_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        stat_table.verticalHeader().setVisible(False)
+        stat_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        stat_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        stat_table.setShowGrid(True)
+        stat_table.setMouseTracking(False)
+
         h_scroll = QScrollArea()
         h_scroll.setObjectName("matrixScroll")
         h_scroll.setWidgetResizable(False)
@@ -133,21 +152,24 @@ class SimulationView(QWidget):
         h_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         h_scroll.setFrameShape(QFrame.Shape.NoFrame)
 
-        table = QTableWidget()
-        table.setObjectName("matrixTable")
-        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
-        table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        table.verticalHeader().setVisible(False)
-        table.setAlternatingRowColors(True)
-        table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        table.setShowGrid(True)
+        data_table = QTableWidget()
+        data_table.setObjectName("matrixTable")
+        data_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        data_table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
+        data_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        data_table.verticalHeader().setVisible(False)
+        data_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        data_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        data_table.setShowGrid(True)
+        data_table.setMouseTracking(False)
 
-        h_scroll.setWidget(table)
-        layout.addWidget(h_scroll)
+        h_scroll.setWidget(data_table)
+        matrix_row_layout.addWidget(stat_table)
+        matrix_row_layout.addWidget(h_scroll, 1)
+        layout.addWidget(matrix_row)
 
-        card._table = table
+        card._stat_table = stat_table
+        card._table = data_table
         card._h_scroll = h_scroll
         return card
 
@@ -184,6 +206,7 @@ class SimulationView(QWidget):
         )
 
         self._fill_matrix_table(
+            self.table_avg._stat_table,
             self.table_avg._table,
             self.table_avg._h_scroll,
             columns,
@@ -192,6 +215,7 @@ class SimulationView(QWidget):
             column_caps,
         )
         self._fill_matrix_table(
+            self.table_best._stat_table,
             self.table_best._table,
             self.table_best._h_scroll,
             columns,
@@ -200,6 +224,7 @@ class SimulationView(QWidget):
             column_caps,
         )
         self._fill_matrix_table(
+            self.table_worst._stat_table,
             self.table_worst._table,
             self.table_worst._h_scroll,
             columns,
@@ -228,17 +253,21 @@ class SimulationView(QWidget):
 
     def _fill_matrix_table(
         self,
-        table: QTableWidget,
+        stat_table: QTableWidget,
+        data_table: QTableWidget,
         h_scroll: QScrollArea,
         columns: list[str],
         matrix: dict,
         is_pre_promo: bool,
         column_caps: list[dict],
     ):
-        num_cols = len(columns) + 1
-        table.setRowCount(len(STAT_KEYS))
-        table.setColumnCount(num_cols)
-        table.setHorizontalHeaderLabels(["Stat"] + columns)
+        stat_table.setRowCount(len(STAT_KEYS))
+        stat_table.setColumnCount(1)
+        stat_table.setHorizontalHeaderLabels(["Stat"])
+
+        data_table.setRowCount(len(STAT_KEYS))
+        data_table.setColumnCount(len(columns))
+        data_table.setHorizontalHeaderLabels(columns)
 
         promo_col = columns.index("↑") if is_pre_promo else -1
 
@@ -248,46 +277,71 @@ class SimulationView(QWidget):
             font = stat_item.font()
             font.setBold(True)
             stat_item.setFont(font)
-            table.setItem(row, 0, stat_item)
+            stat_item.setBackground(QBrush(STAT_COL_BG))
+            stat_item.setForeground(QBrush(QColor("#1d4f8d")))
+            stat_table.setItem(row, 0, stat_item)
 
             values = matrix[key]
             cap_for_stat_cols = [caps.get(key, 0) for caps in column_caps]
+            row_bg = ROW_ALT_BG if row % 2 else ROW_BG
 
             for col_idx, val in enumerate(values):
                 display_val = int(val)
                 item = QTableWidgetItem(str(display_val))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
-                if is_pre_promo and col_idx == promo_col:
+                if display_val == cap_for_stat_cols[col_idx]:
+                    item.setBackground(QBrush(CAP_BG))
+                    item.setForeground(QBrush(CAP_BG))
+                elif is_pre_promo and col_idx == promo_col:
                     item.setBackground(QBrush(PROMO_BG))
                     item.setForeground(QBrush(PROMO_FG))
-                elif display_val == cap_for_stat_cols[col_idx]:
-                    item.setBackground(QBrush(CAP_BG))
-                    item.setForeground(QBrush(CAP_FG))
+                else:
+                    item.setBackground(QBrush(row_bg))
+                    item.setForeground(QBrush(QColor("#d4dad0")))
 
-                table.setItem(row, col_idx + 1, item)
+                data_table.setItem(row, col_idx, item)
 
-        header = table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        for col in range(1, num_cols):
-            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+        stat_header = stat_table.horizontalHeader()
+        stat_header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
 
-        self._size_table_to_content(table, h_scroll)
+        data_header = data_table.horizontalHeader()
+        for col in range(len(columns)):
+            data_header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
 
-    def _size_table_to_content(self, table: QTableWidget, h_scroll: QScrollArea):
-        """Size table to show all rows (no vertical scroll); horizontal scroll if needed."""
-        table.resizeColumnsToContents()
-        table.resizeRowsToContents()
+        self._size_matrix_tables(stat_table, data_table, h_scroll)
 
-        frame = table.frameWidth() * 2
-        header_height = table.horizontalHeader().height()
-        rows_height = sum(table.rowHeight(row) for row in range(table.rowCount()))
-        table_height = header_height + rows_height + frame
+    def _size_matrix_tables(
+        self, stat_table: QTableWidget, data_table: QTableWidget, h_scroll: QScrollArea
+    ):
+        """Size tables to show all rows; stat column fixed, data columns scroll horizontally."""
+        stat_table.resizeColumnsToContents()
+        data_table.resizeColumnsToContents()
+        stat_table.resizeRowsToContents()
+        data_table.resizeRowsToContents()
 
-        table_width = frame
-        for col in range(table.columnCount()):
-            table_width += table.columnWidth(col)
+        header_height = max(
+            stat_table.horizontalHeader().height(),
+            data_table.horizontalHeader().height(),
+        )
+        stat_table.horizontalHeader().setFixedHeight(header_height)
+        data_table.horizontalHeader().setFixedHeight(header_height)
 
-        table.setFixedSize(table_width, table_height)
+        for row in range(stat_table.rowCount()):
+            row_height = max(stat_table.rowHeight(row), data_table.rowHeight(row))
+            stat_table.setRowHeight(row, row_height)
+            data_table.setRowHeight(row, row_height)
+
+        rows_height = sum(stat_table.rowHeight(row) for row in range(stat_table.rowCount()))
+        table_height = header_height + rows_height + stat_table.frameWidth() * 2
+
+        stat_width = stat_table.frameWidth() * 2 + stat_table.columnWidth(0)
+        stat_table.setFixedSize(stat_width, table_height)
+
+        data_width = data_table.frameWidth() * 2
+        for col in range(data_table.columnCount()):
+            data_width += data_table.columnWidth(col)
+        data_table.setFixedSize(data_width, table_height)
+
         h_scroll.setMinimumHeight(table_height)
         h_scroll.setMaximumHeight(table_height)

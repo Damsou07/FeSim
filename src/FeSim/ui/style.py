@@ -488,21 +488,35 @@ QLabel#tableTitle {
 
 QTableWidget#matrixTable {
     background-color: #12141c;
-    alternate-background-color: #161820;
     border: none;
     border-radius: 0;
     gridline-color: #252830;
 }
 
-QTableWidget#matrixTable::item {
+QTableWidget#matrixStatTable {
+    background-color: #12141c;
+    border: none;
+    border-right: 2px solid #3a5a8a;
+    border-radius: 0;
+    gridline-color: #252830;
+}
+
+QTableWidget#matrixTable::item,
+QTableWidget#matrixStatTable::item {
     padding: 6px 10px;
 }
 
-QTableWidget#matrixTable QHeaderView::section {
+QTableWidget#matrixTable QHeaderView::section,
+QTableWidget#matrixStatTable QHeaderView::section {
     background-color: #1a1e28;
     color: #9098b0;
     border-bottom: 2px solid #3a5a8a;
     padding: 8px 10px;
+}
+
+QTableWidget#matrixTable::item:hover:!selected,
+QTableWidget#matrixStatTable::item:hover:!selected {
+    background-color: unset;
 }
 
 QScrollArea#matrixScroll {

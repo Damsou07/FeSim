@@ -152,6 +152,33 @@ class SimulationService:
         score_best = best_total / total_weight
         score_worst = worst_total / total_weight
 
+        # Build score curves per level/column
+        score_avg_curve = []
+        score_best_curve = []
+        score_worst_curve = []
+
+        for col in range(total_cols):
+            avg_col_score = sum(
+                avg_matrix[key][col] * STAT_WEIGHTS[key]
+                for key in STAT_KEYS
+                if key != excluded_stat
+            ) / total_weight
+            score_avg_curve.append(round(avg_col_score, 1))
+
+            best_col_score = sum(
+                best_matrix[key][col] * STAT_WEIGHTS[key]
+                for key in STAT_KEYS
+                if key != excluded_stat
+            ) / total_weight
+            score_best_curve.append(round(best_col_score, 1))
+
+            worst_col_score = sum(
+                worst_matrix[key][col] * STAT_WEIGHTS[key]
+                for key in STAT_KEYS
+                if key != excluded_stat
+            ) / total_weight
+            score_worst_curve.append(round(worst_col_score, 1))
+
         return {
             "columns": columns,
             "avg_matrix": avg_matrix,
@@ -160,6 +187,9 @@ class SimulationService:
             "score_average": score_average,
             "score_best": score_best,
             "score_worst": score_worst,
+            "score_avg_curve": score_avg_curve,
+            "score_best_curve": score_best_curve,
+            "score_worst_curve": score_worst_curve,
             "start_level": start_level,
             "target_level": TARGET_LEVEL,
             "scenario_count": scenario_count,

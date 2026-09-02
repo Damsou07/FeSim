@@ -628,4 +628,18 @@ QTableWidget#matrixStatTable QHeaderView::section {
 QScrollArea#matrixScroll {
     background-color: transparent;
 }
+
+QFrame#scoreChartCard {
+    background-color: #14161e;
+    border: 1px solid #2a2e3c;
+    border-radius: 8px;
+}
+
+QLabel#scoreChartTitle {
+    color: #8aa8d8;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
 """

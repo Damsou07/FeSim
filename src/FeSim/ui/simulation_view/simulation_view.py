@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from FeSim.ui.matrix_cell_delegate import MatrixCellDelegate
+from FeSim.ui.simulation_view.score_chart_view import ScoreChartView
 
 
 STAT_LABELS = ["HP", "STR", "MAG", "SKL", "SPD", "LCK", "DEF", "RES"]
@@ -49,7 +50,7 @@ class SimulationView(QWidget):
         root_layout.addWidget(title)
 
         subtitle = QLabel(
-            "Simulez l'évolution des statistiques jusqu'au niveau 20 "
+            "Simulez l'évolution des statistiques jusqu'au plus au niveau possible "
             "sur plusieurs scénarios aléatoires."
         )
         subtitle.setObjectName("pageSubtitle")
@@ -125,6 +126,9 @@ class SimulationView(QWidget):
 
         self.table_worst = self._create_matrix_table("Pire scénario")
         self.results_layout.addWidget(self.table_worst)
+
+        self.score_chart = ScoreChartView()
+        self.results_layout.addWidget(self.score_chart)
 
         self.results_layout.addStretch()
 
@@ -279,6 +283,13 @@ class SimulationView(QWidget):
             result["score_worst"],
             is_pre_promo,
             column_caps,
+        )
+
+        self.score_chart.set_data(
+            columns,
+            result.get("score_avg_curve", []),
+            result.get("score_best_curve", []),
+            result.get("score_worst_curve", []),
         )
 
         self.results_container.setVisible(True)

@@ -140,9 +140,20 @@ class SimulationView(QWidget):
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(10)
 
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(0, 0, 0, 0)
+
         label = QLabel(title_text)
         label.setObjectName("tableTitle")
-        layout.addWidget(label)
+        header_layout.addWidget(label)
+
+        header_layout.addStretch()
+
+        score_label = QLabel("Score : --")
+        score_label.setObjectName("matrixScoreLabel")
+        header_layout.addWidget(score_label)
+
+        layout.addLayout(header_layout)
 
         matrix_row = QWidget()
         matrix_row_layout = QHBoxLayout(matrix_row)
@@ -188,6 +199,7 @@ class SimulationView(QWidget):
         card._stat_table = stat_table
         card._table = data_table
         card._h_scroll = h_scroll
+        card._score_label = score_label
         return card
 
     def _on_run_clicked(self):
@@ -236,29 +248,35 @@ class SimulationView(QWidget):
         )
 
         self._fill_matrix_table(
+            self.table_avg,
             self.table_avg._stat_table,
             self.table_avg._table,
             self.table_avg._h_scroll,
             columns,
             result["avg_matrix"],
+            result["score_average"],
             is_pre_promo,
             column_caps,
         )
         self._fill_matrix_table(
+            self.table_best,
             self.table_best._stat_table,
             self.table_best._table,
             self.table_best._h_scroll,
             columns,
             result["best_matrix"],
+            result["score_best"],
             is_pre_promo,
             column_caps,
         )
         self._fill_matrix_table(
+            self.table_worst,
             self.table_worst._stat_table,
             self.table_worst._table,
             self.table_worst._h_scroll,
             columns,
             result["worst_matrix"],
+            result["score_worst"],
             is_pre_promo,
             column_caps,
         )
@@ -283,14 +301,18 @@ class SimulationView(QWidget):
 
     def _fill_matrix_table(
         self,
+        card: QWidget,
         stat_table: QTableWidget,
         data_table: QTableWidget,
         h_scroll: QScrollArea,
         columns: list[str],
         matrix: dict,
+        score: float,
         is_pre_promo: bool,
         column_caps: list[dict],
     ):
+        if hasattr(card, "_score_label"):
+            card._score_label.setText(f"Score : {score:.1f}")
         stat_table.setRowCount(len(STAT_KEYS))
         stat_table.setColumnCount(1)
         stat_table.setHorizontalHeaderLabels(["Stat"])

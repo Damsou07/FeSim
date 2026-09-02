@@ -45,6 +45,12 @@ class SimulationService:
         best_snapshot = None
         worst_snapshot = None
 
+        # Accumulate final scores
+        total_score_sum = 0
+
+        # Définis si l'unité est une unité magique ou physique
+        ismagic = character.get("mag", 0) >= character.get("str", 0)
+
         for _ in range(scenario_count):
             stats = {key: character[key] for key in STAT_KEYS}
             # Store full path for this scenario
@@ -87,13 +93,24 @@ class SimulationService:
                                 if random.randint(1, 100) <= growth:
                                     stats[key] += 1
 
-            # Total stats at final column for comparison
+            # définis le pire et meilleure scénario, pour une unité physique la mag est retiré du calcul
+            # pour une unité magique la force est retiré du calcul
             final_col = total_cols - 1
-            total = sum(snapshot[key][final_col] for key in STAT_KEYS)
+            excluded_stat = "str" if ismagic else "mag"
+
+            total = sum(
+                snapshot[key][final_col]
+                for key in STAT_KEYS
+                if key != excluded_stat
+            )
+
+            # calcule le score moyen de tous les scénarios
+            total_score_sum += total
 
             if total > best_total:
                 best_total = total
                 best_snapshot = snapshot
+
             if total < worst_total:
                 worst_total = total
                 worst_snapshot = snapshot
@@ -110,11 +127,19 @@ class SimulationService:
             best_matrix[key] = [float(v) for v in best_snapshot[key]]
             worst_matrix[key] = [float(v) for v in worst_snapshot[key]]
 
+        # Scores finaux
+        score_average = total_score_sum / scenario_count
+        score_best = best_total
+        score_worst = worst_total
+
         return {
             "columns": columns,
             "avg_matrix": avg_matrix,
             "best_matrix": best_matrix,
             "worst_matrix": worst_matrix,
+            "score_average": score_average,
+            "score_best": score_best,
+            "score_worst": score_worst,
             "start_level": start_level,
             "target_level": TARGET_LEVEL,
             "scenario_count": scenario_count,

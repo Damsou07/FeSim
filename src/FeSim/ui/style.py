@@ -578,6 +578,16 @@ QLabel#tableTitle {
     letter-spacing: 0.8px;
 }
 
+QLabel#matrixScoreLabel {
+    color: #5a9aee;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: #1a2438;
+    border: 1px solid #2a3e60;
+    border-radius: 4px;
+    padding: 3px 10px;
+}
+
 QTableWidget#matrixTable {
     background-color: #12141c;
     border: none;

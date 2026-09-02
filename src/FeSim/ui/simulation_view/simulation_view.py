@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QProgressBar,
     QPushButton,
     QScrollArea,
     QSpinBox,
@@ -67,9 +68,10 @@ class SimulationView(QWidget):
 
         self.scenario_count = QSpinBox()
         self.scenario_count.setMinimum(1)
-        self.scenario_count.setMaximum(1000)
+        self.scenario_count.setMaximum(10000)
+        self.scenario_count.setSingleStep(10)
         self.scenario_count.setValue(50)
-        self.scenario_count.setFixedWidth(90)
+        self.scenario_count.setFixedWidth(100)
         controls_layout.addWidget(self.scenario_count)
 
         self.promo_label = QLabel("Promotion")
@@ -87,6 +89,15 @@ class SimulationView(QWidget):
         controls_layout.addWidget(self.run_btn)
 
         root_layout.addWidget(controls_panel)
+
+        # ── Progress bar ─────────────────────────────────────────────
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("Calcul de la simulation... %p%")
+        self.progress_bar.setVisible(False)
+        root_layout.addWidget(self.progress_bar)
 
         # ── Scrollable results area (vertical scroll on page) ───────
         scroll = QScrollArea()
@@ -182,6 +193,18 @@ class SimulationView(QWidget):
     def _on_run_clicked(self):
         self.run_simulation.emit(self.scenario_count.value())
 
+    def show_progress(self):
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(True)
+        self.run_btn.setEnabled(False)
+
+    def set_progress(self, value: int):
+        self.progress_bar.setValue(value)
+
+    def hide_progress(self):
+        self.progress_bar.setVisible(False)
+        self.run_btn.setEnabled(True)
+
     def get_selected_promo_id(self) -> int | None:
         return self.promo_combo.currentData()
 
@@ -208,6 +231,7 @@ class SimulationView(QWidget):
         self.info_label.setText(
             f"<b>{result['character_name']}</b>  ·  "
             f"Nv.&nbsp;{result['start_level']} → Nv.&nbsp;{result['target_level']}  ·  "
+            f"{'Avec Promotion' if result['is_pre_promo'] else 'Sans promotion'}  ·  "
             f"{result['scenario_count']}&nbsp;scénarios"
         )
 

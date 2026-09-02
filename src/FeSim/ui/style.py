@@ -189,6 +189,98 @@ QComboBox {
     selection-background-color: #3a5a8a;
 }
 
+QSpinBox,
+QDoubleSpinBox {
+    padding-right: 22px;
+}
+
+QSpinBox::up-button,
+QDoubleSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 18px;
+    height: 12px;
+    border-left: 1px solid #2e3040;
+    border-bottom: 1px solid #2e3040;
+    background-color: #1e2030;
+    border-top-right-radius: 4px;
+}
+
+QSpinBox::up-button:hover,
+QDoubleSpinBox::up-button:hover {
+    background-color: #2e3448;
+}
+
+QSpinBox::up-button:pressed,
+QDoubleSpinBox::up-button:pressed {
+    background-color: #1a2438;
+}
+
+QSpinBox::down-button,
+QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 18px;
+    height: 12px;
+    border-left: 1px solid #2e3040;
+    background-color: #1e2030;
+    border-bottom-right-radius: 4px;
+}
+
+QSpinBox::down-button:hover,
+QDoubleSpinBox::down-button:hover {
+    background-color: #2e3448;
+}
+
+QSpinBox::down-button:pressed,
+QDoubleSpinBox::down-button:pressed {
+    background-color: #1a2438;
+}
+
+QSpinBox::up-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 5px solid #8090a8;
+}
+
+QSpinBox::down-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #8090a8;
+}
+
+QSpinBox::up-arrow:hover {
+    border-bottom-color: #5a8dee;
+}
+
+QSpinBox::down-arrow:hover {
+    border-top-color: #5a8dee;
+}
+
+/* ── Progress Bar ───────────────────────────────────────────────────── */
+QProgressBar {
+    background-color: #1a1c26;
+    border: 1px solid #2e3040;
+    border-radius: 5px;
+    text-align: center;
+    color: #d4d4dc;
+    font-weight: 600;
+    font-size: 11px;
+    height: 18px;
+}
+
+QProgressBar::chunk {
+    background-color: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #1a4a8a, stop:1 #2a8ab0
+    );
+    border-radius: 4px;
+}
+
 QLineEdit:focus,
 QSpinBox:focus,
 QDoubleSpinBox:focus,

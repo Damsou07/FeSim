@@ -59,7 +59,7 @@ def main():
         lambda: (window.show_classes_view(), gc_ctrl._refresh())
     )
     window.navigate_to_simulation.connect(
-        lambda: window.show_simulation_view()
+        lambda: (sim_ctrl.prepare_view(), window.show_simulation_view())
     )
     window.navigate_back.connect(window.show_character_view)
 

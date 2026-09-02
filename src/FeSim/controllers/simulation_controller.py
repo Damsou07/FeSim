@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from FeSim.services.character_service import CharacterService
 from FeSim.services.game_class_service import GameClassService
@@ -31,14 +31,9 @@ class SimulationController:
 
     def _connect_signals(self):
         self.view.run_simulation.connect(self._on_run_simulation)
-        self.view.promo_combo.currentIndexChanged.connect(self._on_promo_changed)
 
-    def _on_promo_changed(self, index: int):
-        if index >= 0 and self._current_character is not None and self._game_class is not None:
-            self._run_simulation()
-
-    def _on_run_simulation(self, scenario_count: int):
-        self._scenario_count = scenario_count
+    def prepare_view(self):
+        """Prepare promotion choices and character data when entering the simulation view."""
         char_id = self.window.get_selected_id()
         if char_id is None:
             return
@@ -57,7 +52,6 @@ class SimulationController:
         if is_post_promo:
             self.view.set_post_promo_mode(True)
             self._promotions = []
-            self._run_simulation()
         else:
             to_ids = self.game_class_service.get_promotion_to_ids(self._game_class.id)
             self._promotions = []
@@ -65,6 +59,35 @@ class SimulationController:
                 promo_gc = self.game_class_service.get_by_id(pid)
                 if promo_gc:
                     self._promotions.append(self.game_class_service.to_dict(promo_gc))
+
+            self.view.set_post_promo_mode(False)
+            self.view.set_promotion_choices(self._promotions)
+
+    def _on_run_simulation(self, scenario_count: int):
+        self._scenario_count = scenario_count
+        char_id = self.window.get_selected_id()
+        if char_id is None:
+            return
+
+        character = self.character_service.get_character(char_id)
+        if character is None:
+            return
+
+        self._current_character = self.character_service.to_dict(character)
+        self._game_class = self.game_class_service.get_by_id(character.game_class_id)
+        if self._game_class is None:
+            return
+
+        is_post_promo = self._game_class.level_class == "post promotion"
+
+        if not is_post_promo:
+            if not self._promotions:
+                to_ids = self.game_class_service.get_promotion_to_ids(self._game_class.id)
+                self._promotions = []
+                for pid in to_ids:
+                    promo_gc = self.game_class_service.get_by_id(pid)
+                    if promo_gc:
+                        self._promotions.append(self.game_class_service.to_dict(promo_gc))
 
             if not self._promotions:
                 QMessageBox.warning(
@@ -75,9 +98,20 @@ class SimulationController:
                 )
                 return
 
-            self.view.set_post_promo_mode(False)
-            self.view.set_promotion_choices(self._promotions)
-            self._run_simulation()
+        # Show loading progress bar
+        self.view.show_progress()
+        self.view.set_progress(20)
+        QApplication.processEvents()
+
+        self.view.set_progress(50)
+        QApplication.processEvents()
+
+        self._run_simulation()
+
+        self.view.set_progress(100)
+        QApplication.processEvents()
+
+        self.view.hide_progress()
 
     def _run_simulation(self):
         if self._current_character is None:
